@@ -339,17 +339,6 @@ const Streaming = () => {
         }
     };
 
-    // Auto-unmute on first click (Desktop)
-    useEffect(() => {
-        if (isTouchDevice || isActivated || !isPlayerReady) return;
-        const handleInteraction = () => setIsActivated(true);
-        window.addEventListener('click', handleInteraction, { once: true });
-        window.addEventListener('keydown', handleInteraction, { once: true });
-        return () => {
-            window.removeEventListener('click', handleInteraction);
-            window.removeEventListener('keydown', handleInteraction);
-        };
-    }, [isTouchDevice, isActivated, isPlayerReady]);
 
     // Handle Volume PostMessage & Persistent Unmute
     useEffect(() => {
@@ -529,11 +518,7 @@ const Streaming = () => {
                                 title="YouTube Stream"
                                 onLoad={() => {
                                     setIsPlayerReady(true);
-                                    // On desktop, skip activation and just hide loading
-                                    if (!isTouchDevice) {
-                                        // Wait for first user interaction to set isActivated
-                                        setTimeout(() => setLoading(false), 1500);
-                                    }
+                                    // Loading overlay will be hidden by activatePlayer click
                                 }}
                             />
                         ) : (
@@ -541,32 +526,40 @@ const Streaming = () => {
                         )}
                     </div>
 
-                    {/* INTERACTION OVERLAY (Mobile Only - Fixes Android Autoplay/Sound) */}
-                    {isTouchDevice && !isActivated && (
+                    {/* INTERACTION OVERLAY (All Devices - Fixes Autoplay/Sound) */}
+                    {!isActivated && (
                         <div
                             className="absolute inset-0 z-[40] bg-black flex flex-col items-center justify-center gap-4 cursor-pointer"
                             onClick={activatePlayer}
                         >
-                            {loading && (
+                            {(loading || !isPlayerReady) && (
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="w-10 h-10 border-4 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin"></div>
                                     <div className="text-neon-blue font-mono text-[10px] animate-pulse uppercase tracking-[0.2em]">Resolving Signal...</div>
-                                    <div className="text-white/40 text-[8px] uppercase tracking-widest mt-4">Tap screen to activate audio</div>
+                                    <div className="text-white/40 text-[8px] uppercase tracking-widest mt-4">{isTouchDevice ? 'Tap screen to activate audio' : 'Click anywhere to activate audio'}</div>
                                 </div>
                             )}
                             {!loading && isPlayerReady && (
-                                <div className="bg-neon-blue/20 backdrop-blur-md px-6 py-3 rounded-full border border-neon-blue/40 animate-bounce">
-                                    <div className="text-neon-blue font-bold text-[10px] uppercase tracking-[0.2em]">TAP TO START WATCHING</div>
-                                </div>
+                                isTouchDevice ? (
+                                    // Mobile: original style
+                                    <div className="bg-neon-blue/20 backdrop-blur-md px-6 py-3 rounded-full border border-neon-blue/40 animate-bounce">
+                                        <div className="text-neon-blue font-bold text-[10px] uppercase tracking-[0.2em]">TAP TO START WATCHING</div>
+                                    </div>
+                                ) : (
+                                    // Desktop: new ping style
+                                    <div className="flex flex-col items-center gap-6">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 rounded-full bg-neon-blue/20 animate-ping"></div>
+                                            <div className="relative bg-neon-blue/20 backdrop-blur-md px-8 py-4 rounded-full border border-neon-blue/40">
+                                                <div className="text-neon-blue font-bold text-[11px] uppercase tracking-[0.3em]">
+                                                    ▶  CLICK TO START WATCHING
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-white/30 text-[9px] uppercase tracking-widest animate-pulse">Click anywhere</div>
+                                    </div>
+                                )
                             )}
-                        </div>
-                    )}
-
-                    {/* Desktop loading overlay (only shown on non-touch devices) */}
-                    {!isTouchDevice && loading && (
-                        <div className="absolute inset-0 z-[35] bg-black flex flex-col items-center justify-center gap-4">
-                            <div className="w-10 h-10 border-4 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin"></div>
-                            <div className="text-neon-blue font-mono text-[10px] animate-pulse uppercase tracking-[0.2em]">Resolving Signal...</div>
                         </div>
                     )}
 
