@@ -16,7 +16,7 @@ function App() {
     <Router>
       <ScrollToTop />
       <CursorAnimation />
-      <div className="bg-black min-h-screen text-white font-sans selection:bg-neon-pink selection:text-white flex flex-col">
+      <div className="min-h-screen font-sans flex flex-col" style={{ backgroundColor: '#fdf6ee', color: '#3b2a1a' }}>
         <Navbar />
         <div className="flex-grow pt-20">
           <Routes>

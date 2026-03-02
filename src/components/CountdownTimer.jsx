@@ -31,10 +31,18 @@ const CountdownTimer = ({ targetDate }) => {
     Object.keys(timeLeft).forEach((interval) => {
         timerComponents.push(
             <div key={interval} className="flex flex-col items-center mx-4">
-                <div className="text-4xl md:text-6xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500">
+                <div
+                    className="text-4xl md:text-6xl font-display font-bold"
+                    style={{
+                        background: 'linear-gradient(to bottom, #3b2a1a, #8b5e3c)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                    }}
+                >
                     {timeLeft[interval] < 10 ? `0${timeLeft[interval]}` : timeLeft[interval]}
                 </div>
-                <div className="text-xs uppercase tracking-widest text-neon-blue mt-2">
+                <div className="text-xs uppercase tracking-widest mt-2" style={{ color: '#8b5e3c' }}>
                     {interval}
                 </div>
             </div>
@@ -42,8 +50,11 @@ const CountdownTimer = ({ targetDate }) => {
     });
 
     return (
-        <div className="flex justify-center flex-wrap my-12 p-8 bg-dark-surface/50 backdrop-blur-sm rounded-2xl border border-white/5 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-            {timerComponents.length ? timerComponents : <span>Event Started!</span>}
+        <div
+            className="flex justify-center flex-wrap my-12 p-8 backdrop-blur-sm rounded-2xl"
+            style={{ backgroundColor: 'rgba(240,230,211,0.6)', border: '1px solid #c9956a30', boxShadow: '0 4px 30px rgba(139,94,60,0.1)' }}
+        >
+            {timerComponents.length ? timerComponents : <span style={{ color: '#8b5e3c' }}>Event Started!</span>}
         </div>
     );
 };
