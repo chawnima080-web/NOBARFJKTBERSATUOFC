@@ -1,18 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700;900&display=swap');
 @import "tailwindcss";
 
 @theme {
     --font-sans: 'Inter', sans-serif;
-    --font-display: 'Orbitron', sans-serif;
+    --font-display: 'Playfair Display', serif;
 
-    --color-neon-blue: #00f3ff;
-    --color-neon-purple: #bc13fe;
-    --color-neon-pink: #ff0055;
-    --color-neon-green: #0aff00;
+    /* Cream & Brown Palette */
+    --color-neon-blue: #8b5e3c;
+    --color-neon-purple: #a0785a;
+    --color-neon-pink: #c9956a;
+    --color-neon-green: #7a9e7e;
 
-    --color-dark-bg: #0a0a0a;
-    --color-dark-surface: #121212;
-    --color-dark-overlay: rgba(18, 18, 18, 0.8);
+    --color-dark-bg: #fdf6ee;
+    --color-dark-surface: #f0e6d3;
+    --color-dark-overlay: rgba(240, 230, 211, 0.9);
+
+    /* Extra warm tones */
+    --color-cream: #fdf6ee;
+    --color-cream-deep: #f0e6d3;
+    --color-brown: #8b5e3c;
+    --color-brown-light: #c9956a;
+    --color-brown-dark: #3b2a1a;
+    --color-brown-muted: #a0785a;
 
     --animate-neon-pulse: neonPulse 2s infinite;
     --animate-float: float 6s ease-in-out infinite;
@@ -21,11 +30,11 @@
 
         0%,
         100% {
-            box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
+            box-shadow: 0 0 10px #c9956a, 0 0 20px #c9956a;
         }
 
         50% {
-            box-shadow: 0 0 20px #bc13fe, 0 0 30px #bc13fe;
+            box-shadow: 0 0 20px #8b5e3c, 0 0 30px #8b5e3c;
         }
     }
 
@@ -44,7 +53,9 @@
 
 @layer base {
     body {
-        @apply bg-black text-white font-sans antialiased overflow-x-hidden m-0 p-0 min-h-screen cursor-none;
+        @apply font-sans antialiased overflow-x-hidden m-0 p-0 min-h-screen cursor-none;
+        background-color: #fdf6ee;
+        color: #3b2a1a;
     }
 
     #root {
@@ -57,6 +68,21 @@
     h4,
     h5,
     h6 {
-        @apply font-display tracking-wider;
+        @apply font-display tracking-wide;
+        color: #3b2a1a;
     }
+}
+
+/* Custom scrollbar for cream theme */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f0e6d3;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c9956a;
+    border-radius: 2px;
 }
