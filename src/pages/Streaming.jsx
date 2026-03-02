@@ -44,7 +44,8 @@ const Streaming = () => {
                 setUrl(prev => {
                     if (prev !== newUrl) {
                         setLoading(true);
-                        setTimeout(() => setLoading(false), 2000);
+                        setIsPlayerReady(false);
+                        setIsActivated(false); // Reset activation on new URL
                         return newUrl;
                     }
                     return prev;
@@ -410,48 +411,64 @@ const Streaming = () => {
     useEffect(() => {
         if (!hlsMode || !url?.trim()) return;
 
-        const videoEl = videoRef.current;
-        if (!videoEl) return;
+        let cancelled = false;
 
-        // Destroy previous instance
-        if (hlsRef.current) {
-            hlsRef.current.destroy();
-            hlsRef.current = null;
-        }
+        // Retry loop: <video> may not be mounted yet on first render with hlsMode=true
+        const initHls = () => {
+            if (cancelled) return;
+            const videoEl = videoRef.current;
+            if (!videoEl) {
+                requestAnimationFrame(initHls);
+                return;
+            }
 
-        if (Hls.isSupported()) {
-            const hls = new Hls({
-                enableWorker: true,
-                lowLatencyMode: true,
-                backBufferLength: 90,
-            });
-            hlsRef.current = hls;
-            hls.loadSource(url.trim());
-            hls.attachMedia(videoEl);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                setIsPlayerReady(true);
-                setLoading(false);
-                videoEl.muted = true;
-                videoEl.play().catch(() => { });
-            });
-            hls.on(Hls.Events.ERROR, (event, data) => {
-                if (data.fatal) {
-                    console.error('HLS fatal error:', data.type, data.details);
+            // Destroy previous instance
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+                hlsRef.current = null;
+            }
+
+            if (Hls.isSupported()) {
+                const hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90,
+                    maxBufferLength: 30,
+                });
+                hlsRef.current = hls;
+                hls.loadSource(url.trim());
+                hls.attachMedia(videoEl);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    if (cancelled) return;
+                    setIsPlayerReady(true);
                     setLoading(false);
-                }
-            });
-        } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-            // Native HLS (Safari)
-            videoEl.src = url.trim();
-            videoEl.muted = true;
-            videoEl.addEventListener('loadedmetadata', () => {
-                setIsPlayerReady(true);
-                setLoading(false);
-                videoEl.play().catch(() => { });
-            });
-        }
+                    videoEl.muted = true;
+                    videoEl.play().catch(() => { });
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal && !cancelled) {
+                        console.error('HLS fatal error:', data.type, data.details);
+                        setIsPlayerReady(false);
+                        setLoading(false);
+                    }
+                });
+            } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+                // Native HLS (Safari)
+                videoEl.src = url.trim();
+                videoEl.muted = true;
+                videoEl.addEventListener('loadedmetadata', () => {
+                    if (cancelled) return;
+                    setIsPlayerReady(true);
+                    setLoading(false);
+                    videoEl.play().catch(() => { });
+                });
+            }
+        };
+
+        initHls();
 
         return () => {
+            cancelled = true;
             if (hlsRef.current) {
                 hlsRef.current.destroy();
                 hlsRef.current = null;
@@ -482,14 +499,13 @@ const Streaming = () => {
         setLoading(true);
         setIsPlayerReady(false);
         setActiveTimeOffset(0);
-        setRefreshKey(prev => prev + 1);
         setIsActivated(false);
-        // Destroy HLS instance on refresh
+        // Destroy HLS instance — re-created by useEffect after refreshKey increment
         if (hlsRef.current) {
             hlsRef.current.destroy();
             hlsRef.current = null;
         }
-        setTimeout(() => setLoading(false), 2000);
+        setRefreshKey(prev => prev + 1);
     };
 
     const handleSend = async (e) => {
@@ -636,14 +652,14 @@ const Streaming = () => {
                             className="absolute inset-0 z-[40] bg-black flex flex-col items-center justify-center gap-4 cursor-pointer"
                             onClick={activatePlayer}
                         >
-                            {(loading || !isPlayerReady) && (
+                            {!isPlayerReady && (
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="w-10 h-10 border-4 rounded-full animate-spin" style={{ borderColor: '#c9956a20', borderTopColor: '#8b5e3c' }}></div>
                                     <div className="font-mono text-[10px] animate-pulse uppercase tracking-[0.2em]" style={{ color: '#c9956a' }}>Resolving Signal...</div>
                                     <div className="text-[8px] uppercase tracking-widest mt-4" style={{ color: 'rgba(255,255,255,0.4)' }}>{isTouchDevice ? 'Tap screen to activate audio' : 'Click anywhere to activate audio'}</div>
                                 </div>
                             )}
-                            {!loading && isPlayerReady && (
+                            {isPlayerReady && (
                                 isTouchDevice ? (
                                     // Mobile: original style
                                     <div className="backdrop-blur-md px-6 py-3 rounded-full border animate-bounce" style={{ backgroundColor: 'rgba(139,94,60,0.2)', borderColor: 'rgba(139,94,60,0.4)' }}>
