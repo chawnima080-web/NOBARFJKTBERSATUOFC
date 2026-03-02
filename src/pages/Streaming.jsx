@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Users, Play, Maximize, Volume2, Settings, Ticket, Lock, AlertTriangle, RotateCcw } from 'lucide-react';
 import { nanoid } from 'nanoid';
+import Hls from 'hls.js';
 import { db } from '../lib/firebase';
 import { ref, onValue, set, onDisconnect, serverTimestamp, push, limitToLast, query } from 'firebase/database';
 
@@ -272,6 +273,9 @@ const Streaming = () => {
         }
     };
 
+    const videoRef = useRef(null);
+    const hlsRef = useRef(null);
+
     // UI States
     const [url, setUrl] = useState('');
     const [quality, setQuality] = useState('hd1080');
@@ -279,7 +283,7 @@ const Streaming = () => {
     const [volume, setVolume] = useState(0.8);
     const [loading, setLoading] = useState(true);
     const [showControls, setShowControls] = useState(false);
-    const [autoQuality, setAutoQuality] = useState(false); // false = Manual, true = Auto
+    const [autoQuality, setAutoQuality] = useState(false);
     const [messages, setMessages] = useState([
         { user: 'Admin', text: 'Selamat datang di live nobar! Acara akan segera dimulai.' },
     ]);
@@ -319,9 +323,21 @@ const Streaming = () => {
 
     // --- ACTIVATION & UNMUTE LOGIC ---
     const activatePlayer = () => {
+        // HLS video element activation
+        if (hlsMode && videoRef.current) {
+            videoRef.current.muted = false;
+            videoRef.current.volume = volume;
+            videoRef.current.play().catch(() => {
+                videoRef.current.muted = true;
+                videoRef.current.play();
+            });
+            setIsActivated(true);
+            setLoading(false);
+            return;
+        }
+        // YouTube iframe activation
         const iframe = document.getElementById('yt-player-iframe');
         if (iframe) {
-            // Send commands to unlock audio and force play
             const commands = [
                 { func: 'playVideo', args: [] },
                 { func: 'unMute', args: [] },
@@ -381,7 +397,75 @@ const Streaming = () => {
         return (match && match[2].length === 11) ? match[2] : null;
     };
 
+    const isM3U8 = (url) => {
+        if (!url) return false;
+        const trimmed = url.trim().toLowerCase();
+        return trimmed.includes('.m3u8') || trimmed.startsWith('https://') && trimmed.includes('m3u8');
+    };
+
     const videoId = getVideoId(url?.trim());
+    const hlsMode = isM3U8(url?.trim()) && !videoId;
+
+    // --- HLS PLAYER SETUP ---
+    useEffect(() => {
+        if (!hlsMode || !url?.trim()) return;
+
+        const videoEl = videoRef.current;
+        if (!videoEl) return;
+
+        // Destroy previous instance
+        if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+        }
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: true,
+                backBufferLength: 90,
+            });
+            hlsRef.current = hls;
+            hls.loadSource(url.trim());
+            hls.attachMedia(videoEl);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                setIsPlayerReady(true);
+                setLoading(false);
+                videoEl.muted = true;
+                videoEl.play().catch(() => { });
+            });
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    console.error('HLS fatal error:', data.type, data.details);
+                    setLoading(false);
+                }
+            });
+        } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native HLS (Safari)
+            videoEl.src = url.trim();
+            videoEl.muted = true;
+            videoEl.addEventListener('loadedmetadata', () => {
+                setIsPlayerReady(true);
+                setLoading(false);
+                videoEl.play().catch(() => { });
+            });
+        }
+
+        return () => {
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+                hlsRef.current = null;
+            }
+        };
+    }, [hlsMode, url, refreshKey]);
+
+    // --- HLS VOLUME CONTROL ---
+    useEffect(() => {
+        if (hlsMode && videoRef.current && isActivated) {
+            videoRef.current.volume = volume;
+            videoRef.current.muted = false;
+        }
+    }, [volume, isActivated, hlsMode]);
 
     // --- REAL-TIME SYNC LOGIC ---
     useEffect(() => {
@@ -392,14 +476,19 @@ const Streaming = () => {
         }
     }, [startTime, url, refreshKey, serverTimeOffset]);
 
+
     const handleRefresh = (e) => {
         if (e) e.stopPropagation();
         setLoading(true);
         setIsPlayerReady(false);
-        setActiveTimeOffset(0); // Reset offset to force recalculation
+        setActiveTimeOffset(0);
         setRefreshKey(prev => prev + 1);
-        // Force re-activation requirement on full manual refresh
         setIsActivated(false);
+        // Destroy HLS instance on refresh
+        if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+        }
         setTimeout(() => setLoading(false), 2000);
     };
 
@@ -511,7 +600,19 @@ const Streaming = () => {
             <div id="main-player-container" className="flex-grow bg-black flex flex-col relative group overflow-hidden">
                 <div className="flex-grow relative h-full w-full">
                     <div className="absolute inset-0 z-0 bg-black flex items-center justify-center">
-                        {videoId ? (
+                        {hlsMode ? (
+                            /* --- HLS / M3U8 Player --- */
+                            <video
+                                ref={videoRef}
+                                key={refreshKey}
+                                className="absolute inset-0 w-full h-full object-contain"
+                                style={{ pointerEvents: 'none' }}
+                                autoPlay
+                                muted
+                                playsInline
+                            />
+                        ) : videoId ? (
+                            /* --- YouTube Player --- */
                             <iframe
                                 id="yt-player-iframe"
                                 key={refreshKey}
