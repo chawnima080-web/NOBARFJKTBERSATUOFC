@@ -21,14 +21,14 @@ const Streaming = () => {
         const unsubTickets = onValue(ticketsRef, (snap) => {
             const data = snap.val();
             setCurrentTickets(Array.isArray(data) ? data : []);
-            if (!dataLoaded && data) setDataLoaded(true);
+            setDataLoaded(true); // Always mark loaded after first response
         });
 
         const publicTicketsRef = ref(db, 'publicTickets');
         const unsubPublic = onValue(publicTicketsRef, (snap) => {
             const data = snap.val();
             setPublicTickets(Array.isArray(data) ? data : []);
-            if (!dataLoaded && data) setDataLoaded(true);
+            setDataLoaded(true); // Always mark loaded after first response
         });
 
         const settingsRef = ref(db, 'settings');
@@ -66,7 +66,7 @@ const Streaming = () => {
             unsubSettings();
             unsubscribeChat();
         };
-    }, [dataLoaded]);
+    }, []);  // Empty deps — subscribe once, listeners auto-update
 
     const [ticketInput, setTicketInput] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
@@ -81,23 +81,30 @@ const Streaming = () => {
     const [tempName, setTempName] = useState('');
     const [viewerCount, setViewerCount] = useState(0);
     const [sessionId] = useState(() => {
-        let id = localStorage.getItem('jkt_session_id');
+        // CRITICAL: Use sessionStorage (NOT localStorage) so Chrome Sync
+        // cannot share the same ID across devices. sessionStorage is
+        // isolated per-tab and per-device, guaranteeing true uniqueness.
+        let id = sessionStorage.getItem('jkt_device_session_id');
         if (!id) {
             id = nanoid();
-            localStorage.setItem('jkt_session_id', id);
+            sessionStorage.setItem('jkt_device_session_id', id);
         }
         return id;
     });
     const [sessionConflict, setSessionConflict] = useState(false);
     const [activeTimeOffset, setActiveTimeOffset] = useState(0);
     const [serverTimeOffset, setServerTimeOffset] = useState(0);
+    const [isActivated, setIsActivated] = useState(false); // Track first user interaction
+    // Detect touch device - overlay only needed on mobile
+    const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
     // 3. Server Time Offset Listener
     useEffect(() => {
         const offsetRef = ref(db, ".info/serverTimeOffset");
-        return onValue(offsetRef, (snap) => {
+        const unsub = onValue(offsetRef, (snap) => {
             setServerTimeOffset(snap.val() || 0);
         });
+        return () => unsub();
     }, []);
 
     // 4. Authorization Effect
@@ -137,10 +144,13 @@ const Streaming = () => {
         }
     }, [currentTickets, publicTickets, dataLoaded]);
 
-    // 6. Presence & Heartbeat Logic (High Precision for Multi-Device)
+    // 6. Presence & Heartbeat Logic — counts ALL valid watchers
     useEffect(() => {
         if (!isAuthorized || !activeTicket || sessionConflict || !dataLoaded) return;
 
+        const allValidTickets = [...currentTickets, ...publicTickets];
+
+        // Write MY presence to Firebase
         const presenceRef = ref(db, `presence/${activeTicket}_${sessionId}`);
         const updatePresence = () => {
             set(presenceRef, {
@@ -150,28 +160,23 @@ const Streaming = () => {
             });
         };
 
-        // Initial write
         updatePresence();
         onDisconnect(presenceRef).remove();
 
-        // HEARTBEAT: Update every 15s
-        const presenceHeartbeat = setInterval(updatePresence, 15000);
+        // HEARTBEAT every 10s to stay "online"
+        const presenceHeartbeat = setInterval(updatePresence, 10000);
 
-        // Listener for Unique Viewers Count (Calibrated for Server Time)
+        // Listen to ALL presence entries and count anyone with a valid ticket
         const globalPresenceRef = ref(db, 'presence');
         const unsubscribePresence = onValue(globalPresenceRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 const uniqueSessions = new Set();
-                const serverNow = Date.now() + serverTimeOffset;
-
                 Object.values(data).forEach(entry => {
-                    if (entry && typeof entry === 'object' && entry.id && entry.ticket === activeTicket) {
-                        const lastActive = entry.timestamp || 0;
-                        // Precision window: 45 seconds (Buffer for mobile latency)
-                        if (serverNow - lastActive < 45000) {
-                            uniqueSessions.add(entry.id);
-                        }
+                    // Count anyone watching with ANY valid ticket (not just same ticket)
+                    if (entry && typeof entry === 'object' && entry.id &&
+                        entry.ticket && allValidTickets.includes(entry.ticket)) {
+                        uniqueSessions.add(entry.id);
                     }
                 });
                 setViewerCount(uniqueSessions.size > 0 ? uniqueSessions.size : 1);
@@ -180,6 +185,7 @@ const Streaming = () => {
             }
         });
 
+        // Public tickets: no session locking needed
         if (publicTickets.includes(activeTicket)) {
             return () => {
                 unsubscribePresence();
@@ -187,24 +193,9 @@ const Streaming = () => {
             };
         }
 
+        // Private tickets: enforce single-device session lock
         const sessionRef = ref(db, `sessions/${activeTicket}`);
         let lockInterval;
-
-        const unsubscribeSession = onValue(sessionRef, (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-
-            if (data.id !== sessionId) {
-                const now = Date.now();
-                const lastSeen = data.timestamp || 0;
-                if (now - lastSeen < 40000) {
-                    setSessionConflict(true);
-                    if (lockInterval) clearInterval(lockInterval);
-                } else {
-                    updateLock();
-                }
-            }
-        });
 
         const updateLock = async () => {
             if (sessionConflict) return;
@@ -214,6 +205,21 @@ const Streaming = () => {
                 console.error("Lock failed:", e);
             }
         };
+
+        const unsubscribeSession = onValue(sessionRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+            if (data.id !== sessionId) {
+                const now = Date.now() + serverTimeOffset;
+                const lastSeen = data.timestamp || 0;
+                if (Math.abs(now - lastSeen) < 35000) {
+                    setSessionConflict(true);
+                    if (lockInterval) clearInterval(lockInterval);
+                } else {
+                    updateLock();
+                }
+            }
+        });
 
         updateLock();
         lockInterval = setInterval(updateLock, 15000);
@@ -225,7 +231,7 @@ const Streaming = () => {
             clearInterval(presenceHeartbeat);
             if (lockInterval) clearInterval(lockInterval);
         };
-    }, [isAuthorized, activeTicket, sessionId, sessionConflict, publicTickets, dataLoaded]);
+    }, [isAuthorized, activeTicket, sessionId, sessionConflict, publicTickets, currentTickets, dataLoaded, serverTimeOffset]);
 
     const handleAuthorization = (ticket) => {
         setIsAuthorized(true);
@@ -273,6 +279,7 @@ const Streaming = () => {
     const [volume, setVolume] = useState(0.8);
     const [loading, setLoading] = useState(true);
     const [showControls, setShowControls] = useState(false);
+    const [autoQuality, setAutoQuality] = useState(false); // false = Manual, true = Auto
     const [messages, setMessages] = useState([
         { user: 'Admin', text: 'Selamat datang di live nobar! Acara akan segera dimulai.' },
     ]);
@@ -310,25 +317,61 @@ const Streaming = () => {
         };
     }, []);
 
-    // Handle Volume PostMessage & Automatic Unmute Attempt
+    // --- ACTIVATION & UNMUTE LOGIC ---
+    const activatePlayer = () => {
+        const iframe = document.getElementById('yt-player-iframe');
+        if (iframe) {
+            // Send commands to unlock audio and force play
+            const commands = [
+                { func: 'playVideo', args: [] },
+                { func: 'unMute', args: [] },
+                { func: 'setVolume', args: [volume * 100] }
+            ];
+            commands.forEach(cmd => {
+                iframe.contentWindow.postMessage(JSON.stringify({
+                    event: 'command',
+                    func: cmd.func,
+                    args: cmd.args
+                }), '*');
+            });
+            setIsActivated(true);
+            setLoading(false);
+        }
+    };
+
+    // Handle Volume PostMessage & Persistent Unmute
     useEffect(() => {
         const iframe = document.getElementById('yt-player-iframe');
         if (iframe && isPlayerReady) {
-            // Volume
             iframe.contentWindow.postMessage(JSON.stringify({
                 event: 'command',
                 func: 'setVolume',
                 args: [volume * 100]
             }), '*');
 
-            // Automatic unMute attempt for seamless flow
+            if (isActivated) {
+                iframe.contentWindow.postMessage(JSON.stringify({
+                    event: 'command',
+                    func: 'unMute',
+                    args: []
+                }), '*');
+            }
+        }
+    }, [volume, isPlayerReady, isActivated]);
+
+    // Force quality when autoQuality is OFF
+    useEffect(() => {
+        if (!isPlayerReady || autoQuality) return;
+        const iframe = document.getElementById('yt-player-iframe');
+        if (iframe) {
+            // setPlaybackQuality forces YouTube to hold the selected resolution
             iframe.contentWindow.postMessage(JSON.stringify({
                 event: 'command',
-                func: 'unMute',
-                args: []
+                func: 'setPlaybackQuality',
+                args: [quality]
             }), '*');
         }
-    }, [volume, isPlayerReady]);
+    }, [isPlayerReady, autoQuality, quality]);
 
     const getVideoId = (url) => {
         if (!url) return null;
@@ -342,19 +385,21 @@ const Streaming = () => {
     // --- REAL-TIME SYNC LOGIC ---
     useEffect(() => {
         if (startTime && !loading) {
-            const now = Date.now();
+            const now = Date.now() + serverTimeOffset;
             const diff = Math.floor((now - startTime) / 1000);
             setActiveTimeOffset(diff > 0 ? diff : 0);
         }
-    }, [startTime, url, refreshKey]); // Update offset ONLY when necessary (refresh/start/url change)
+    }, [startTime, url, refreshKey, serverTimeOffset]);
 
     const handleRefresh = (e) => {
         if (e) e.stopPropagation();
         setLoading(true);
         setIsPlayerReady(false);
+        setActiveTimeOffset(0); // Reset offset to force recalculation
         setRefreshKey(prev => prev + 1);
-        // Offset will be recalculated by the useEffect above
-        setTimeout(() => setLoading(false), 1500);
+        // Force re-activation requirement on full manual refresh
+        setIsActivated(false);
+        setTimeout(() => setLoading(false), 2000);
     };
 
     const handleSend = async (e) => {
@@ -374,6 +419,14 @@ const Streaming = () => {
         }
     };
 
+    // Auto-scroll chat
+    useEffect(() => {
+        const chatContainer = document.getElementById('chat-messages');
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }, [messages]);
+
     // --- RENDER LOGIC ---
 
     if (sessionConflict) {
@@ -386,7 +439,7 @@ const Streaming = () => {
                     <button
                         onClick={async () => {
                             const sessionRef = ref(db, `sessions/${activeTicket}`);
-                            await set(sessionRef, { id: sessionId, timestamp: Date.now() });
+                            await set(sessionRef, { id: sessionId, timestamp: serverTimestamp() });
                             setTimeout(() => window.location.reload(), 500);
                         }}
                         className="w-full bg-neon-pink text-white py-3 rounded-xl font-bold"
@@ -457,13 +510,18 @@ const Streaming = () => {
                         {videoId ? (
                             <iframe
                                 id="yt-player-iframe"
-                                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&showinfo=0&controls=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&origin=${window.location.origin}&vq=${quality}&start=${activeTimeOffset}`}
+                                key={refreshKey}
+                                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playlist=${videoId}&loop=1&rel=0&showinfo=0&controls=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&origin=${window.location.origin}&vq=${quality}&start=${activeTimeOffset}&playsinline=1`}
                                 className="absolute inset-0 w-full h-full border-0 pointer-events-none"
                                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                                 title="YouTube Stream"
                                 onLoad={() => {
                                     setIsPlayerReady(true);
-                                    setTimeout(() => setLoading(false), 1500);
+                                    // On desktop, skip activation and just hide loading
+                                    if (!isTouchDevice) {
+                                        setIsActivated(true);
+                                        setTimeout(() => setLoading(false), 1500);
+                                    }
                                 }}
                             />
                         ) : (
@@ -471,7 +529,29 @@ const Streaming = () => {
                         )}
                     </div>
 
-                    {loading && (
+                    {/* INTERACTION OVERLAY (Mobile Only - Fixes Android Autoplay/Sound) */}
+                    {isTouchDevice && !isActivated && (
+                        <div
+                            className="absolute inset-0 z-[40] bg-black flex flex-col items-center justify-center gap-4 cursor-pointer"
+                            onClick={activatePlayer}
+                        >
+                            {loading && (
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="w-10 h-10 border-4 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin"></div>
+                                    <div className="text-neon-blue font-mono text-[10px] animate-pulse uppercase tracking-[0.2em]">Resolving Signal...</div>
+                                    <div className="text-white/40 text-[8px] uppercase tracking-widest mt-4">Tap screen to activate audio</div>
+                                </div>
+                            )}
+                            {!loading && isPlayerReady && (
+                                <div className="bg-neon-blue/20 backdrop-blur-md px-6 py-3 rounded-full border border-neon-blue/40 animate-bounce">
+                                    <div className="text-neon-blue font-bold text-[10px] uppercase tracking-[0.2em]">TAP TO START WATCHING</div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Desktop loading overlay (only shown on non-touch devices) */}
+                    {!isTouchDevice && loading && (
                         <div className="absolute inset-0 z-[35] bg-black flex flex-col items-center justify-center gap-4">
                             <div className="w-10 h-10 border-4 border-neon-blue/20 border-t-neon-blue rounded-full animate-spin"></div>
                             <div className="text-neon-blue font-mono text-[10px] animate-pulse uppercase tracking-[0.2em]">Resolving Signal...</div>
@@ -505,14 +585,30 @@ const Streaming = () => {
                             <div className="flex items-center gap-3 sm:gap-6 bg-black/40 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white/10">
                                 <div className="relative">
                                     <button onClick={(e) => { e.stopPropagation(); setShowQualityMenu(!showQualityMenu); }} className="flex flex-col items-center hover:text-neon-blue transition-colors">
-                                        <Settings size={20} className={showQualityMenu ? 'text-neon-blue' : 'text-gray-300'} />
-                                        <span className="text-[8px] mt-1 font-mono uppercase tracking-widest">{quality.replace('hd', '')}p</span>
+                                        <Settings size={20} className={showQualityMenu ? 'text-neon-blue' : autoQuality ? 'text-green-400' : 'text-gray-300'} />
+                                        <span className="text-[8px] mt-1 font-mono uppercase tracking-widest">
+                                            {autoQuality ? 'AUTO' : quality === 'large' ? '480p' : quality === 'medium' ? '360p' : quality.replace('hd', '') + 'p'}
+                                        </span>
                                     </button>
 
                                     {showQualityMenu && (
-                                        <div className="absolute bottom-full mb-4 right-0 bg-dark-surface border border-white/10 rounded-xl p-2 min-w-[140px] z-50 shadow-2xl backdrop-blur-xl">
+                                        <div className="absolute bottom-full mb-4 right-0 bg-dark-surface border border-white/10 rounded-xl p-2 min-w-[160px] z-50 shadow-2xl backdrop-blur-xl">
                                             <div className="text-[8px] font-mono text-gray-500 px-3 py-1 uppercase tracking-widest">Select Resolution</div>
+
+                                            {/* Auto Quality Toggle */}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setAutoQuality(prev => !prev); }}
+                                                className={`w-full text-left px-4 py-2.5 rounded-lg text-[10px] font-bold transition-all flex items-center justify-between ${autoQuality ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'text-gray-400 hover:bg-white/5'
+                                                    }`}
+                                            >
+                                                <span>Auto Quality</span>
+                                                <span className={`w-2 h-2 rounded-full ${autoQuality ? 'bg-green-400' : 'bg-gray-600'}`}></span>
+                                            </button>
+
+                                            <div className="border-t border-white/5 my-1"></div>
+
                                             {[
+                                                { label: '1440p QHD', value: 'hd1440' },
                                                 { label: '1080p Ultra', value: 'hd1080' },
                                                 { label: '720p HD', value: 'hd720' },
                                                 { label: '480p SD', value: 'large' },
@@ -523,11 +619,16 @@ const Streaming = () => {
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setQuality(q.value);
+                                                        setAutoQuality(false); // Switch to manual when picking a resolution
                                                         setShowQualityMenu(false);
                                                         setLoading(true);
+                                                        setIsPlayerReady(false);
                                                         setRefreshKey(prev => prev + 1);
                                                     }}
-                                                    className={`w-full text-left px-4 py-2.5 rounded-lg text-[10px] font-bold transition-all ${quality === q.value ? 'bg-neon-blue text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                                                    className={`w-full text-left px-4 py-2.5 rounded-lg text-[10px] font-bold transition-all ${!autoQuality && quality === q.value
+                                                        ? 'bg-neon-blue text-white'
+                                                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                                        }`}
                                                 >
                                                     {q.label}
                                                 </button>
@@ -586,11 +687,11 @@ const Streaming = () => {
             <div className="w-full md:w-80 lg:w-96 bg-dark-surface border-l border-white/10 flex flex-col h-[50vh] md:h-full">
                 <div className="p-4 border-b border-white/10 flex justify-between items-center text-white">
                     <h3 className="font-bold tracking-widest text-xs uppercase">LIVE CHAT</h3>
-                    <div className="flex items-center text-xs text-neon-green gap-1 bg-neon-green/10 px-2 py-1 rounded">
+                    <div className="flex items-center text-xs font-bold text-neon-green gap-1 bg-neon-green/10 px-2 py-1 rounded">
                         <Users size={12} /> {viewerCount.toLocaleString()}
                     </div>
                 </div>
-                <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                <div id="chat-messages" className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar scroll-smooth">
                     {messages.map((msg, idx) => (
                         <div key={idx} className="text-sm">
                             <span className={`font-bold mr-2 ${msg.user === 'Admin' ? 'text-neon-pink' : 'text-neon-blue'}`}>{msg.user}:</span>
@@ -618,4 +719,3 @@ const Streaming = () => {
 };
 
 export default Streaming;
-
