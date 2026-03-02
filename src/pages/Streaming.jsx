@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Users, Play, Maximize, Volume2, Settings, Ticket, Lock, AlertTriangle, RotateCcw } from 'lucide-react';
 import { nanoid } from 'nanoid';
@@ -339,6 +339,18 @@ const Streaming = () => {
         }
     };
 
+    // Auto-unmute on first click (Desktop)
+    useEffect(() => {
+        if (isTouchDevice || isActivated || !isPlayerReady) return;
+        const handleInteraction = () => setIsActivated(true);
+        window.addEventListener('click', handleInteraction, { once: true });
+        window.addEventListener('keydown', handleInteraction, { once: true });
+        return () => {
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('keydown', handleInteraction);
+        };
+    }, [isTouchDevice, isActivated, isPlayerReady]);
+
     // Handle Volume PostMessage & Persistent Unmute
     useEffect(() => {
         const iframe = document.getElementById('yt-player-iframe');
@@ -519,7 +531,7 @@ const Streaming = () => {
                                     setIsPlayerReady(true);
                                     // On desktop, skip activation and just hide loading
                                     if (!isTouchDevice) {
-                                        setIsActivated(true);
+                                        // Wait for first user interaction to set isActivated
                                         setTimeout(() => setLoading(false), 1500);
                                     }
                                 }}
