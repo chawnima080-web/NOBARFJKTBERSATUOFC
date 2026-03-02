@@ -18,12 +18,9 @@ const Admin = () => {
     const [newTicket, setNewTicket] = useState('');
     const [newPublicTicket, setNewPublicTicket] = useState('');
     const [saveStatus, setSaveStatus] = useState('');
-
     const [isConnected, setIsConnected] = useState(false);
 
-    // --- Sync with Firebase ---
     useEffect(() => {
-        // Monitor Connection Status
         const connectedRef = ref(db, '.info/connected');
         const connectedUnsubscribe = onValue(connectedRef, (snap) => {
             setIsConnected(snap.val() === true);
@@ -31,7 +28,6 @@ const Admin = () => {
 
         const loadingTimeout = setTimeout(() => setLoading(false), 5000);
 
-        // Granular Listeners to avoid root-level "presence" or "chat" triggers resetting the UI
         const settingsRef = ref(db, 'settings');
         const unsubSettings = onValue(settingsRef, (snap) => {
             const data = snap.val();
@@ -74,25 +70,21 @@ const Admin = () => {
         }, 10000);
 
         try {
-            // Updated to granular sets to avoid deleting 'chats', 'presence', or 'sessions' nodes
             await Promise.all([
                 set(ref(db, 'settings'), settings),
                 set(ref(db, 'lineup'), selectedLineup),
                 set(ref(db, 'tickets'), tickets),
                 set(ref(db, 'publicTickets'), publicTickets)
             ]);
-
             clearTimeout(saveTimeout);
             setSaveStatus('Berhasil disimpan ke Cloud!');
         } catch (error) {
             clearTimeout(saveTimeout);
             setSaveStatus('Gagal: ' + error.message);
-            console.error("Save Error:", error);
         }
         setTimeout(() => setSaveStatus(''), 5000);
     };
 
-    // --- Lineup Logic ---
     const toggleMember = (id) => {
         if (selectedLineup.includes(id)) {
             setSelectedLineup(selectedLineup.filter(mId => mId !== id));
@@ -101,7 +93,6 @@ const Admin = () => {
         }
     };
 
-    // --- Ticket Logic ---
     const addTicket = () => {
         if (newTicket && !tickets.includes(newTicket)) {
             setTickets([...tickets, newTicket]);
@@ -109,9 +100,7 @@ const Admin = () => {
         }
     };
 
-    const removeTicket = (t) => {
-        setTickets(tickets.filter(ticket => ticket !== t));
-    };
+    const removeTicket = (t) => setTickets(tickets.filter(ticket => ticket !== t));
 
     const addPublicTicket = () => {
         if (newPublicTicket && !publicTickets.includes(newPublicTicket)) {
@@ -120,17 +109,13 @@ const Admin = () => {
         }
     };
 
-    const removePublicTicket = (t) => {
-        setPublicTickets(publicTickets.filter(ticket => ticket !== t));
-    };
+    const removePublicTicket = (t) => setPublicTickets(publicTickets.filter(ticket => ticket !== t));
 
     const generateBulkTickets = (count) => {
         const newBatch = [];
         for (let i = 0; i < count; i++) {
             const code = 'JKT48-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-            if (!tickets.includes(code) && !newBatch.includes(code)) {
-                newBatch.push(code);
-            }
+            if (!tickets.includes(code) && !newBatch.includes(code)) newBatch.push(code);
         }
         setTickets([...tickets, ...newBatch]);
     };
@@ -141,43 +126,74 @@ const Admin = () => {
                 await remove(ref(db, 'chats'));
                 alert('Riwayat chat berhasil dihapus!');
             } catch (error) {
-                console.error("Clear chat error:", error);
+                console.error('Clear chat error:', error);
             }
         }
     };
 
+    /* ── Shared input style ── */
+    const inputStyle = {
+        width: '100%',
+        backgroundColor: '#fdf6ee',
+        border: '1px solid #c9956a50',
+        borderRadius: '0.5rem',
+        padding: '0.75rem',
+        color: '#3b2a1a',
+        outline: 'none',
+        fontFamily: 'monospace',
+        fontSize: '0.875rem',
+    };
+
+    /* ── Shared card style ── */
+    const cardStyle = {
+        backgroundColor: '#f0e6d3',
+        border: '1px solid #c9956a30',
+        borderRadius: '1rem',
+        padding: '1.5rem',
+    };
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-dark-bg flex items-center justify-center text-neon-blue">
-                <Loader2 className="animate-spin" size={48} />
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#fdf6ee' }}>
+                <Loader2 className="animate-spin" size={48} style={{ color: '#8b5e3c' }} />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen pt-24 bg-dark-bg text-white p-6">
+        <div className="min-h-screen pt-24 p-6" style={{ backgroundColor: '#fdf6ee', color: '#3b2a1a' }}>
             <div className="max-w-6xl mx-auto">
+
+                {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-4xl font-display font-bold text-neon-blue">ADMIN PANEL</h1>
-                            <div className={`px-2 py-0.5 rounded text-[10px] font-mono border ${isConnected ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'}`}>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-4xl font-display font-bold" style={{ color: '#3b2a1a' }}>ADMIN PANEL</h1>
+                            <div
+                                className={`px-2 py-0.5 rounded text-[10px] font-mono border`}
+                                style={isConnected
+                                    ? { backgroundColor: 'rgba(122,158,126,0.1)', color: '#7a9e7e', border: '1px solid rgba(122,158,126,0.3)' }
+                                    : { backgroundColor: 'rgba(201,89,60,0.1)', color: '#c9596a', border: '1px solid rgba(201,89,60,0.3)' }
+                                }
+                            >
                                 {isConnected ? 'ONLINE' : 'OFFLINE'}
                             </div>
                         </div>
-                        <p className="text-gray-400 font-mono text-xs mt-1">MANAGEMENT WEB NOBAR JKT48</p>
+                        <p className="font-mono text-xs mt-1" style={{ color: '#a0785a' }}>MANAGEMENT WEB NOBAR JKT48</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        {saveStatus && <span className="text-neon-green font-mono text-sm animate-pulse">{saveStatus}</span>}
+                        {saveStatus && <span className="font-mono text-sm animate-pulse" style={{ color: '#7a9e7e' }}>{saveStatus}</span>}
                         <button
                             onClick={clearChat}
-                            className="bg-neon-pink/10 border border-neon-pink/30 text-neon-pink px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-neon-pink hover:text-white transition-all text-sm"
+                            className="px-4 py-3 rounded-xl font-bold flex items-center gap-2 text-sm transition-all"
+                            style={{ backgroundColor: 'rgba(201,149,106,0.1)', border: '1px solid rgba(201,149,106,0.4)', color: '#8b5e3c' }}
                         >
                             <Trash2 size={16} /> HAPUS CHAT
                         </button>
                         <button
                             onClick={handleSave}
-                            className="bg-neon-blue text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-600 transition-all shadow-[0_0_20px_rgba(0,183,255,0.2)]"
+                            className="px-8 py-3 rounded-xl font-bold flex items-center gap-2 text-white transition-all"
+                            style={{ backgroundColor: '#8b5e3c', boxShadow: '0 0 20px rgba(139,94,60,0.2)' }}
                         >
                             <Save size={18} /> SIMPAN PERUBAHAN
                         </button>
@@ -186,49 +202,50 @@ const Admin = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                    {/* --- EVENT SETTINGS --- */}
+                    {/* ── EVENT SETTINGS ── */}
                     <div className="lg:col-span-2 space-y-8">
-                        <div className="glass-panel p-6 border-white/5">
-                            <h2 className="text-xl font-display font-bold mb-6 flex items-center gap-2 text-neon-purple">
-                                <Layout size={20} /> PENGATURAN EVENT
+                        <div style={cardStyle}>
+                            <h2 className="text-xl font-display font-bold mb-6 flex items-center gap-2" style={{ color: '#c9956a' }}>
+                                <Layout size={20} style={{ color: '#3b2a1a' }} /> PENGATURAN EVENT
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-mono text-gray-500 uppercase mb-2">Judul Show</label>
+                                        <label className="block text-xs font-mono uppercase mb-2" style={{ color: '#a0785a' }}>Judul Show</label>
                                         <input
                                             type="text"
                                             value={settings.title}
                                             onChange={(e) => setSettings({ ...settings, title: e.target.value })}
-                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:border-neon-blue outline-none"
+                                            style={inputStyle}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-mono text-gray-500 uppercase mb-2">Sub-Judul</label>
+                                        <label className="block text-xs font-mono uppercase mb-2" style={{ color: '#a0785a' }}>Sub-Judul</label>
                                         <input
                                             type="text"
                                             value={settings.subtitle}
                                             onChange={(e) => setSettings({ ...settings, subtitle: e.target.value })}
-                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:border-neon-blue outline-none"
+                                            style={inputStyle}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-mono text-gray-500 uppercase mb-2">Waktu Show (Countdown)</label>
+                                        <label className="block text-xs font-mono uppercase mb-2" style={{ color: '#a0785a' }}>Waktu Show (Countdown)</label>
                                         <input
                                             type="datetime-local"
                                             value={settings.date ? settings.date.substring(0, 16) : ''}
                                             onChange={(e) => setSettings({ ...settings, date: e.target.value })}
-                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:border-neon-blue outline-none font-mono"
+                                            style={inputStyle}
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-4">
                                     <div>
                                         <div className="flex justify-between items-center mb-2">
-                                            <label className="block text-xs font-mono text-gray-500 uppercase">Streaming URL (YouTube/HLS)</label>
+                                            <label className="block text-xs font-mono uppercase" style={{ color: '#a0785a' }}>Streaming URL (YouTube/HLS)</label>
                                             <button
                                                 onClick={() => setSettings({ ...settings, streamUrl: '' })}
-                                                className="text-[10px] text-neon-pink hover:underline uppercase font-bold"
+                                                className="text-[10px] uppercase font-bold transition-opacity hover:opacity-70"
+                                                style={{ color: '#c9956a' }}
                                             >
                                                 Kosongkan
                                             </button>
@@ -238,65 +255,71 @@ const Admin = () => {
                                             value={settings.streamUrl || ''}
                                             onChange={(e) => setSettings({ ...settings, streamUrl: e.target.value })}
                                             placeholder="Paste link YouTube atau .m3u8..."
-                                            className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:border-neon-blue outline-none font-mono text-sm"
+                                            style={inputStyle}
                                         />
-                                        <p className="text-[10px] text-gray-400 mt-2">Gunakan link YouTube biasa atau link streaming m3u8.</p>
+                                        <p className="text-[10px] mt-2" style={{ color: '#a0785a' }}>Gunakan link YouTube biasa atau link streaming m3u8.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* --- LINEUP SELECTION --- */}
-                        <div className="glass-panel p-6 border-white/5">
-                            <h2 className="text-xl font-display font-bold mb-6 flex items-center gap-2 text-neon-pink">
-                                <Users size={20} /> SELEKSI MEMBER (LINEUP)
+                        {/* ── LINEUP SELECTION ── */}
+                        <div style={cardStyle}>
+                            <h2 className="text-xl font-display font-bold mb-6 flex items-center gap-2" style={{ color: '#8b5e3c' }}>
+                                <Users size={20} style={{ color: '#3b2a1a' }} /> SELEKSI MEMBER (LINEUP)
                             </h2>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                 {members.map(member => (
                                     <div
                                         key={member.id}
                                         onClick={() => toggleMember(member.id)}
-                                        className={`cursor-pointer group relative p-2 rounded-lg border transition-all ${selectedLineup.includes(member.id)
-                                            ? 'border-neon-blue bg-neon-blue/10'
-                                            : 'border-white/5 bg-black/40 grayscale hover:grayscale-0 hover:border-white/20'
-                                            }`}
+                                        className="cursor-pointer group relative p-2 rounded-lg border transition-all"
+                                        style={selectedLineup.includes(member.id)
+                                            ? { border: '1px solid #8b5e3c', backgroundColor: 'rgba(139,94,60,0.1)' }
+                                            : { border: '1px solid #c9956a20', backgroundColor: '#fdf6ee', filter: 'grayscale(60%)' }
+                                        }
                                     >
                                         <img src={member.image} alt="" className="w-full aspect-square object-cover rounded mb-2" />
-                                        <p className="text-[10px] font-bold truncate text-center">{member.name}</p>
+                                        <p className="text-[10px] font-bold truncate text-center" style={{ color: '#3b2a1a' }}>{member.name}</p>
                                         {selectedLineup.includes(member.id) && (
-                                            <div className="absolute top-1 right-1 w-4 h-4 bg-neon-blue rounded-full flex items-center justify-center">
+                                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#8b5e3c' }}>
                                                 <Plus size={10} className="text-white rotate-45" />
                                             </div>
                                         )}
                                     </div>
                                 ))}
                             </div>
-                            <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10 flex justify-between items-center">
-                                <p className="text-sm font-mono text-gray-400">Total Member Terpilih: <span className="text-neon-blue font-bold">{selectedLineup.length}</span></p>
+                            <div className="mt-4 p-4 rounded-lg border flex justify-between items-center" style={{ backgroundColor: '#fdf6ee', border: '1px solid #c9956a30' }}>
+                                <p className="text-sm font-mono" style={{ color: '#7a5c3e' }}>
+                                    Total Member Terpilih: <span className="font-bold" style={{ color: '#8b5e3c' }}>{selectedLineup.length}</span>
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* --- TICKET MANAGEMENT --- */}
+                    {/* ── TICKET MANAGEMENT ── */}
                     <div className="space-y-8">
-                        {/* --- PUBLIC / SHARED TICKETS --- */}
-                        <div className="glass-panel p-6 border-white/5">
-                            <h2 className="text-xl font-display font-bold mb-6 flex items-center gap-2 text-neon-blue">
-                                <Users size={20} /> TIKET PUBLIK (NO-KICK)
-                            </h2>
-                            <p className="text-[10px] text-gray-400 mb-4 uppercase tracking-wider">Tiket ini bisa dipakai 1000+ orang sekaligus tanpa conflict.</p>
 
-                            <div className="flex gap-2 mb-6">
+                        {/* Public Tickets */}
+                        <div style={cardStyle}>
+                            <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2" style={{ color: '#7a9e7e' }}>
+                                <Users size={20} style={{ color: '#3b2a1a' }} /> TIKET PUBLIK (NO-KICK)
+                            </h2>
+                            <p className="text-[10px] mb-4 uppercase tracking-wider" style={{ color: '#a0785a' }}>Tiket ini bisa dipakai 1000+ orang sekaligus tanpa conflict.</p>
+
+                            <div className="flex gap-2 mb-4">
                                 <input
                                     type="text"
                                     value={newPublicTicket}
                                     onChange={(e) => setNewPublicTicket(e.target.value.toUpperCase())}
                                     placeholder="KODE PUBLIK..."
-                                    className="flex-grow bg-black border border-white/10 rounded-lg p-3 text-white focus:border-neon-blue outline-none font-mono"
+                                    style={{ ...inputStyle, flex: 1 }}
+                                    onKeyDown={(e) => e.key === 'Enter' && addPublicTicket()}
                                 />
                                 <button
                                     onClick={addPublicTicket}
-                                    className="bg-neon-blue/20 text-neon-blue p-3 rounded-lg hover:bg-neon-blue hover:text-white transition-all"
+                                    className="p-3 rounded-lg transition-all"
+                                    style={{ backgroundColor: 'rgba(122,158,126,0.15)', border: '1px solid rgba(122,158,126,0.4)', color: '#7a9e7e' }}
                                 >
                                     <Plus size={24} />
                                 </button>
@@ -304,11 +327,12 @@ const Admin = () => {
 
                             <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
                                 {publicTickets.map(ticket => (
-                                    <div key={ticket} className="flex items-center justify-between p-3 bg-neon-blue/5 border border-neon-blue/20 rounded-lg group">
-                                        <span className="font-mono text-sm tracking-widest text-neon-blue">{ticket}</span>
+                                    <div key={ticket} className="flex items-center justify-between p-3 rounded-lg group" style={{ backgroundColor: 'rgba(122,158,126,0.07)', border: '1px solid rgba(122,158,126,0.25)' }}>
+                                        <span className="font-mono text-sm tracking-widest" style={{ color: '#3b2a1a' }}>{ticket}</span>
                                         <button
                                             onClick={() => removePublicTicket(ticket)}
-                                            className="text-gray-600 hover:text-neon-pink opacity-0 group-hover:opacity-100 transition-all"
+                                            className="opacity-0 group-hover:opacity-100 transition-all"
+                                            style={{ color: '#c9956a' }}
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -317,39 +341,39 @@ const Admin = () => {
                             </div>
                         </div>
 
-                        {/* --- REGULAR TICKETS --- */}
-                        <div className="glass-panel p-6 border-white/5">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-display font-bold flex items-center gap-2 text-neon-green">
-                                    <Ticket size={20} /> TIKET REGULER
+                        {/* Regular Tickets */}
+                        <div style={cardStyle}>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-display font-bold flex items-center gap-2" style={{ color: '#8b5e3c' }}>
+                                    <Ticket size={20} style={{ color: '#3b2a1a' }} /> TIKET REGULER
                                 </h2>
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={() => generateBulkTickets(10)}
-                                        className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1 rounded-md transition-all"
-                                    >
-                                        +10 AUTO
-                                    </button>
-                                    <button
-                                        onClick={() => generateBulkTickets(50)}
-                                        className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1 rounded-md transition-all"
-                                    >
-                                        +50 AUTO
-                                    </button>
+                                    {[10, 50].map(n => (
+                                        <button
+                                            key={n}
+                                            onClick={() => generateBulkTickets(n)}
+                                            className="text-[10px] px-3 py-1 rounded-md transition-all"
+                                            style={{ backgroundColor: '#fdf6ee', border: '1px solid #c9956a30', color: '#7a5c3e' }}
+                                        >
+                                            +{n} AUTO
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
-                            <div className="flex gap-2 mb-6">
+                            <div className="flex gap-2 mb-4">
                                 <input
                                     type="text"
                                     value={newTicket}
                                     onChange={(e) => setNewTicket(e.target.value.toUpperCase())}
                                     placeholder="KODE BARU..."
-                                    className="flex-grow bg-black border border-white/10 rounded-lg p-3 text-white focus:border-neon-green outline-none font-mono"
+                                    style={{ ...inputStyle, flex: 1 }}
+                                    onKeyDown={(e) => e.key === 'Enter' && addTicket()}
                                 />
                                 <button
                                     onClick={addTicket}
-                                    className="bg-neon-green/20 text-neon-green p-3 rounded-lg hover:bg-neon-green hover:text-white transition-all"
+                                    className="p-3 rounded-lg transition-all"
+                                    style={{ backgroundColor: 'rgba(139,94,60,0.1)', border: '1px solid rgba(139,94,60,0.4)', color: '#8b5e3c' }}
                                 >
                                     <Plus size={24} />
                                 </button>
@@ -357,11 +381,12 @@ const Admin = () => {
 
                             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                 {tickets.map(ticket => (
-                                    <div key={ticket} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-lg group hover:border-white/20 transition-all">
-                                        <span className="font-mono text-sm tracking-widest">{ticket}</span>
+                                    <div key={ticket} className="flex items-center justify-between p-3 rounded-lg group transition-all" style={{ backgroundColor: '#fdf6ee', border: '1px solid #c9956a25' }}>
+                                        <span className="font-mono text-sm tracking-widest" style={{ color: '#3b2a1a' }}>{ticket}</span>
                                         <button
                                             onClick={() => removeTicket(ticket)}
-                                            className="text-gray-600 hover:text-neon-pink opacity-0 group-hover:opacity-100 transition-all"
+                                            className="opacity-0 group-hover:opacity-100 transition-all"
+                                            style={{ color: '#c9956a' }}
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -370,16 +395,17 @@ const Admin = () => {
                             </div>
 
                             <button
-                                onClick={() => {
-                                    if (window.confirm('Hapus semua tiket reguler?')) setTickets([]);
-                                }}
-                                className="w-full mt-6 border border-neon-pink/30 text-neon-pink p-3 rounded-lg text-xs font-mono hover:bg-neon-pink hover:text-white transition-all flex items-center justify-center gap-2"
+                                onClick={() => { if (window.confirm('Hapus semua tiket reguler?')) setTickets([]); }}
+                                className="w-full mt-6 p-3 rounded-lg text-xs font-mono flex items-center justify-center gap-2 transition-all"
+                                style={{ border: '1px solid rgba(201,149,106,0.5)', color: '#8b5e3c', backgroundColor: 'transparent' }}
+                                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#8b5e3c'; e.currentTarget.style.color = 'white'; }}
+                                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#8b5e3c'; }}
                             >
                                 <RefreshCw size={14} /> RESET SEMUA REGULER
                             </button>
                         </div>
-                    </div>
 
+                    </div>
                 </div>
             </div>
         </div>
