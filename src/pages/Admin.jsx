@@ -10,7 +10,10 @@ const Admin = () => {
         title: 'NOBAR JKT48',
         subtitle: 'LIVE STREAMING EXPERIENCE',
         date: '2026-02-28T19:00:00',
-        streamUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+        streamUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+        priceLabel: 'TIKET NOBAR',
+        priceAmount: '',
+        priceNote: 'per orang',
     });
     const [selectedLineup, setSelectedLineup] = useState([1, 5, 20]);
     const [tickets, setTickets] = useState(['TRIAL-JKT48']);
@@ -258,6 +261,23 @@ const Admin = () => {
                                             style={inputStyle}
                                         />
                                         <p className="text-[10px] mt-2" style={{ color: '#a0785a' }}>Gunakan link YouTube biasa atau link streaming m3u8.</p>
+                                    </div>
+
+                                    {/* ── PRICE SETTINGS ── */}
+                                    <div style={{ borderTop: '1px dashed #c9956a30', paddingTop: '1rem' }}>
+                                        <label className="block text-xs font-mono uppercase mb-3" style={{ color: '#a0785a' }}>
+                                            💰 HARGA (kosongkan = sembunyikan)
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm" style={{ color: '#a0785a' }}>Rp</span>
+                                            <input
+                                                type="number"
+                                                value={settings.priceAmount || ''}
+                                                onChange={(e) => setSettings({ ...settings, priceAmount: e.target.value })}
+                                                placeholder="50000"
+                                                style={{ ...inputStyle, paddingLeft: '2.5rem' }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>

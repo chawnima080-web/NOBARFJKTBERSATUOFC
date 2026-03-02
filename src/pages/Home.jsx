@@ -13,7 +13,10 @@ const Home = () => {
         return cached ? JSON.parse(cached) : {
             title: 'NOBAR JKT48',
             subtitle: 'LIVE STREAMING EXPERIENCE',
-            date: '2026-02-28T19:00:00'
+            date: '2026-02-28T19:00:00',
+            priceLabel: 'TIKET NOBAR',
+            priceAmount: '',
+            priceNote: 'per orang',
         };
     });
 
@@ -101,6 +104,13 @@ const Home = () => {
                             {settings.subtitle}
                         </p>
                     </div>
+
+                    {/* Price */}
+                    {settings.priceAmount && (
+                        <p className="font-mono tracking-[0.2em] mb-8 text-lg" style={{ color: '#8b5e3c' }}>
+                            PRICE : Rp {Number(settings.priceAmount).toLocaleString('id-ID')}
+                        </p>
+                    )}
 
                     <div className="mb-12 scale-110">
                         <div className="font-mono text-sm mb-4 tracking-widest" style={{ color: '#a0785a' }}>EVENT STARTS IN</div>
