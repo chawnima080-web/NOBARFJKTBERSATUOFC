@@ -408,64 +408,57 @@ const Streaming = () => {
     const hlsMode = isM3U8(url?.trim()) && !videoId;
 
     // --- HLS PLAYER SETUP ---
+    // Depends on isAuthorized + userName so it re-runs when the player UI
+    // first mounts (after user completes auth form), guaranteeing videoRef.current is set.
     useEffect(() => {
-        if (!hlsMode || !url?.trim()) return;
+        if (!hlsMode || !url?.trim() || !isAuthorized || !userName) return;
+
+        const videoEl = videoRef.current;
+        if (!videoEl) return; // Shouldn't happen with proper deps, but guard anyway
+
+        // Destroy previous instance
+        if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+        }
 
         let cancelled = false;
 
-        // Retry loop: <video> may not be mounted yet on first render with hlsMode=true
-        const initHls = () => {
-            if (cancelled) return;
-            const videoEl = videoRef.current;
-            if (!videoEl) {
-                requestAnimationFrame(initHls);
-                return;
-            }
-
-            // Destroy previous instance
-            if (hlsRef.current) {
-                hlsRef.current.destroy();
-                hlsRef.current = null;
-            }
-
-            if (Hls.isSupported()) {
-                const hls = new Hls({
-                    enableWorker: true,
-                    lowLatencyMode: true,
-                    backBufferLength: 90,
-                    maxBufferLength: 30,
-                });
-                hlsRef.current = hls;
-                hls.loadSource(url.trim());
-                hls.attachMedia(videoEl);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    if (cancelled) return;
-                    setIsPlayerReady(true);
-                    setLoading(false);
-                    videoEl.muted = true;
-                    videoEl.play().catch(() => { });
-                });
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    if (data.fatal && !cancelled) {
-                        console.error('HLS fatal error:', data.type, data.details);
-                        setIsPlayerReady(false);
-                        setLoading(false);
-                    }
-                });
-            } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-                // Native HLS (Safari)
-                videoEl.src = url.trim();
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: true,
+                backBufferLength: 90,
+                maxBufferLength: 30,
+            });
+            hlsRef.current = hls;
+            hls.loadSource(url.trim());
+            hls.attachMedia(videoEl);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                if (cancelled) return;
+                setIsPlayerReady(true);
+                setLoading(false);
                 videoEl.muted = true;
-                videoEl.addEventListener('loadedmetadata', () => {
-                    if (cancelled) return;
-                    setIsPlayerReady(true);
+                videoEl.play().catch(() => { });
+            });
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal && !cancelled) {
+                    console.error('HLS fatal error:', data.type, data.details);
+                    setIsPlayerReady(false);
                     setLoading(false);
-                    videoEl.play().catch(() => { });
-                });
-            }
-        };
-
-        initHls();
+                }
+            });
+        } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native HLS (Safari)
+            videoEl.src = url.trim();
+            videoEl.muted = true;
+            videoEl.addEventListener('loadedmetadata', () => {
+                if (cancelled) return;
+                setIsPlayerReady(true);
+                setLoading(false);
+                videoEl.play().catch(() => { });
+            });
+        }
 
         return () => {
             cancelled = true;
@@ -474,7 +467,7 @@ const Streaming = () => {
                 hlsRef.current = null;
             }
         };
-    }, [hlsMode, url, refreshKey]);
+    }, [hlsMode, url, refreshKey, isAuthorized, userName]);
 
     // --- HLS VOLUME CONTROL ---
     useEffect(() => {

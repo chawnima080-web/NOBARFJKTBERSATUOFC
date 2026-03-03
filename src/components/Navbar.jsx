@@ -24,11 +24,15 @@ const Navbar = () => {
 
     return (
         <nav
-            className={`fixed w-full z-50 transition-all duration-300 ${isScrolled
-                ? 'backdrop-blur-lg border-b'
+            className={`fixed w-full z-50 transition-all duration-300 border-b ${isScrolled
+                ? 'backdrop-blur-lg'
                 : 'bg-transparent'
                 }`}
-            style={isScrolled ? { backgroundColor: 'rgba(253,246,238,0.85)', borderColor: '#c9956a40' } : {}}
+            style={
+                isScrolled
+                    ? { backgroundColor: 'rgba(253,246,238,0.92)', borderColor: '#8b5e3c55' }
+                    : { borderColor: '#8b5e3c30' }
+            }
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
