@@ -733,25 +733,28 @@ const Streaming = () => {
                     )}
 
                     <div
-                        className="absolute inset-0 z-30 transition-colors duration-500 pointer-events-auto"
-                        style={{ backgroundColor: showControls ? 'rgba(0,0,0,0.4)' : 'transparent' }}
+                        className="absolute inset-0 z-30 transition-colors duration-500"
+                        style={{ backgroundColor: showControls ? 'rgba(0,0,0,0.5)' : 'transparent', pointerEvents: showControls ? 'auto' : 'none' }}
                         onClick={(e) => {
                             // Show/hide controls on tap anywhere in this area
-                            if (e.target === e.currentTarget) {
+                            if (e.target === e.currentTarget || e.target.classList.contains('streaming-click-layer')) {
                                 setShowControls(prev => !prev);
                             }
                         }}
                     >
+                        {/* Invisible click target to help touch propagation */}
+                        <div className="absolute inset-0 streaming-click-layer" style={{ pointerEvents: 'auto' }} />
+
                         {/* Status Signal */}
                         <div className={`absolute top-4 left-4 transition-all duration-500 ${showControls ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`}>
-                            <div className="text-white font-bold flex items-center gap-2 text-[9px] tracking-[0.4em] backdrop-blur-xl px-3 py-1.5 rounded-full border" style={{ backgroundColor: 'rgba(139,94,60,0.2)', borderColor: 'rgba(139,94,60,0.4)' }}>
+                            <div className="text-white font-bold flex items-center gap-2 text-[9px] tracking-[0.4em] backdrop-blur-xl px-3 py-1.5 rounded-full border pointer-events-auto" style={{ backgroundColor: 'rgba(139,94,60,0.2)', borderColor: 'rgba(139,94,60,0.4)' }}>
                                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] ${videoId ? 'bg-red-500' : 'bg-gray-500'}`}></span>
                                 SIGNAL: {videoId ? 'LIVE' : 'OFFLINE'}
                             </div>
                         </div>
 
-                        <div className={`streaming-controls absolute bottom-0 left-0 w-full p-4 pb-6 sm:p-6 sm:pb-8 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between items-end gap-2 sm:gap-4 transition-all duration-500 ${showControls ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-4 opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:translate-y-0 md:group-hover:pointer-events-auto'}`}>
-                            <div className="flex flex-col gap-2">
+                        <div className={`streaming-controls absolute bottom-0 left-0 w-full p-4 pb-6 sm:p-6 sm:pb-8 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between items-end gap-2 sm:gap-4 transition-all duration-500 pointer-events-auto ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 md:group-hover:opacity-100 md:group-hover:translate-y-0'}`}>
+                            <div className="flex flex-col gap-2 relative z-50">
                                 <div className="font-bold text-[9px] tracking-[0.4em] uppercase" style={{ color: '#d4a843' }}>{settings?.title || 'Nobar JKT48'}</div>
                                 <button
                                     onClick={handleRefresh}
