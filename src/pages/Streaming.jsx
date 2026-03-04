@@ -657,18 +657,22 @@ const Streaming = () => {
                             />
                         ) : videoId ? (
                             /* --- YouTube Player --- */
-                            <iframe
-                                id="yt-player-iframe"
-                                key={refreshKey}
-                                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playlist=${videoId}&loop=1&rel=0&showinfo=0&controls=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&origin=${window.location.origin}&vq=${quality}&start=${activeTimeOffset}&playsinline=1`}
-                                className="absolute inset-0 w-full h-full border-0 pointer-events-none"
-                                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                                title="YouTube Stream"
-                                onLoad={() => {
-                                    setIsPlayerReady(true);
-                                    // Loading overlay will be hidden by activatePlayer click
-                                }}
-                            />
+                            <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
+                                <iframe
+                                    id="yt-player-iframe"
+                                    key={refreshKey}
+                                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playlist=${videoId}&loop=1&rel=0&showinfo=0&controls=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&origin=${window.location.origin}&vq=${quality}&start=${activeTimeOffset}&playsinline=1`}
+                                    className="absolute inset-0 w-full h-full border-0"
+                                    style={{ pointerEvents: 'none' }}
+                                    allow="autoplay; encrypted-media; picture-in-picture"
+                                    title="YouTube Stream"
+                                    onLoad={() => {
+                                        setIsPlayerReady(true);
+                                    }}
+                                />
+                                {/* Hard block: prevents ANY touch from reaching the iframe (stops YouTube app redirect on mobile) */}
+                                <div className="absolute inset-0" style={{ pointerEvents: 'all', touchAction: 'none', background: 'transparent' }} />
+                            </div>
                         ) : (
                             <div className="text-white/20 font-mono text-[10px]">SIGNAL NOT DETECTED</div>
                         )}
@@ -731,7 +735,7 @@ const Streaming = () => {
                             </div>
                         </div>
 
-                        <div className="streaming-controls absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between items-end gap-4 translate-y-2 group-hover:translate-y-0 transition-transform">
+                        <div className={`streaming-controls absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between items-end gap-4 transition-transform duration-300 ${showControls ? 'translate-y-0' : 'translate-y-2 md:group-hover:translate-y-0'}`}>
                             <div className="flex flex-col gap-2">
                                 <div className="font-bold text-[9px] tracking-[0.4em] uppercase" style={{ color: '#d4a843' }}>{settings?.title || 'Nobar JKT48'}</div>
                                 <button
