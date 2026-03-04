@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
+import GoldenParticles from '../components/GoldenParticles';
 import { useNavigate } from 'react-router-dom';
 import { Send, Users, Play, Maximize, Volume2, Settings, Ticket, Lock, AlertTriangle, RotateCcw } from 'lucide-react';
 import { nanoid } from 'nanoid';
@@ -284,6 +285,7 @@ const Streaming = () => {
     const [volume, setVolume] = useState(0.8);
     const [loading, setLoading] = useState(true);
     const [showControls, setShowControls] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [autoQuality, setAutoQuality] = useState(false);
     const [messages, setMessages] = useState([
         { user: 'Admin', text: 'Selamat datang di live nobar! Acara akan segera dimulai.' },
@@ -297,6 +299,21 @@ const Streaming = () => {
             return () => clearTimeout(timer);
         }
     }, [showControls]);
+
+    // Detect fullscreen changes (penting untuk mobile)
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+            // Tampilkan controls saat masuk/keluar fullscreen
+            setShowControls(true);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        };
+    }, []);
 
     // Deter Inspection & Right-Click
     useEffect(() => {
@@ -530,19 +547,25 @@ const Streaming = () => {
 
     if (sessionConflict) {
         return (
-            <div className="min-h-screen pt-20 flex items-center justify-center p-6 text-center" style={{ backgroundColor: '#fdf6ee' }}>
-                <div className="w-full max-w-md p-8 rounded-2xl" style={{ backgroundColor: '#f0e6d3', border: '1px solid #c9956a40' }}>
-                    <AlertTriangle className="mx-auto mb-6" size={48} style={{ color: '#c9956a' }} />
-                    <h2 className="text-2xl font-display mb-2" style={{ color: '#3b2a1a' }}>SESSION CONFLICT</h2>
-                    <p className="text-sm mb-6" style={{ color: '#7a5c3e' }}>Ticket ini sedang digunakan di perangkat lain.</p>
+            <div className="min-h-screen pt-20 flex items-center justify-center p-6 text-center relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #020810 0%, #060f1c 100%)' }}>
+                <GoldenParticles count={80} />
+                <div className="relative z-10 w-full max-w-md p-8" style={{ background: 'rgba(10,22,40,0.8)', border: '1px solid rgba(212,168,67,0.3)', boxShadow: '0 0 40px rgba(212,168,67,0.08)', backdropFilter: 'blur(12px)' }}>
+                    {/* Gold corners */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: 20, height: 20, borderTop: '2px solid #d4a843', borderLeft: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: 20, height: 20, borderTop: '2px solid #d4a843', borderRight: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, width: 20, height: 20, borderBottom: '2px solid #d4a843', borderLeft: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderBottom: '2px solid #d4a843', borderRight: '2px solid #d4a843' }} />
+                    <AlertTriangle className="mx-auto mb-6" size={48} style={{ color: '#d4a843' }} />
+                    <h2 className="text-2xl font-display mb-2" style={{ color: '#f9e6a0' }}>SESSION CONFLICT</h2>
+                    <p className="text-sm mb-6" style={{ color: '#d4c4a088' }}>Ticket ini sedang digunakan di perangkat lain.</p>
                     <button
                         onClick={async () => {
                             const sessionRef = ref(db, `sessions/${activeTicket}`);
                             await set(sessionRef, { id: sessionId, timestamp: serverTimestamp() });
                             setTimeout(() => window.location.reload(), 500);
                         }}
-                        className="w-full py-3 rounded-xl font-bold text-white"
-                        style={{ backgroundColor: '#8b5e3c' }}
+                        className="w-full py-3 font-bold"
+                        style={{ background: 'linear-gradient(135deg, #d4a843, #a07820)', color: '#050d1a', letterSpacing: '0.1em' }}
                     >
                         MASUK PAKSA (AMBIL ALIH)
                     </button>
@@ -553,25 +576,31 @@ const Streaming = () => {
 
     if (!isAuthorized) {
         return (
-            <div className="min-h-screen pt-20 flex items-center justify-center p-6" style={{ backgroundColor: '#fdf6ee' }}>
-                <div className="w-full max-w-md p-8 rounded-2xl text-center" style={{ backgroundColor: '#f0e6d3', border: '1px solid #c9956a30' }}>
-                    <Lock className="mx-auto mb-6" size={48} style={{ color: '#8b5e3c' }} />
-                    <h2 className="text-2xl font-display mb-2" style={{ color: '#3b2a1a' }}>ACCESS PROTECTED</h2>
-                    <p className="text-sm mb-8" style={{ color: '#7a5c3e' }}>Masukkan Ticket ID Anda.</p>
+            <div className="min-h-screen pt-20 flex items-center justify-center p-6 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #020810 0%, #060f1c 100%)' }}>
+                <GoldenParticles count={100} />
+                <div className="relative z-10 w-full max-w-md p-8 text-center" style={{ background: 'rgba(10,22,40,0.8)', border: '1px solid rgba(212,168,67,0.3)', boxShadow: '0 0 40px rgba(212,168,67,0.08)', backdropFilter: 'blur(12px)' }}>
+                    {/* Gold corners */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: 20, height: 20, borderTop: '2px solid #d4a843', borderLeft: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: 20, height: 20, borderTop: '2px solid #d4a843', borderRight: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, width: 20, height: 20, borderBottom: '2px solid #d4a843', borderLeft: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderBottom: '2px solid #d4a843', borderRight: '2px solid #d4a843' }} />
+                    <Lock className="mx-auto mb-6" size={48} style={{ color: '#d4a843' }} />
+                    <h2 className="text-2xl font-display mb-2" style={{ color: '#f9e6a0' }}>ACCESS PROTECTED</h2>
+                    <p className="text-sm mb-8 font-sans" style={{ color: '#d4c4a088' }}>Masukkan Ticket ID Anda.</p>
                     <form onSubmit={handleTicketSubmit} className="space-y-4">
                         <div className="relative">
-                            <Ticket className="absolute left-3 top-1/2 -translate-y-1/2" size={18} style={{ color: '#a0785a' }} />
+                            <Ticket className="absolute left-3 top-1/2 -translate-y-1/2" size={18} style={{ color: '#d4a84399' }} />
                             <input
                                 type="text"
                                 value={ticketInput}
                                 onChange={(e) => setTicketInput(e.target.value)}
                                 placeholder="TICKET ID..."
-                                className="w-full rounded-xl py-3 pl-10 pr-4 outline-none"
-                                style={{ backgroundColor: '#fdf6ee', border: '1px solid #c9956a50', color: '#3b2a1a' }}
+                                className="w-full py-3 pl-10 pr-4 outline-none font-mono tracking-widest"
+                                style={{ background: 'rgba(5,13,26,0.7)', border: '1px solid rgba(212,168,67,0.35)', color: '#f9e6a0' }}
                             />
                         </div>
-                        {authError && <p className="text-xs" style={{ color: '#c9956a' }}>{authError}</p>}
-                        <button className="w-full py-3 rounded-xl font-bold text-white" style={{ backgroundColor: '#8b5e3c' }}>MASUK</button>
+                        {authError && <p className="text-xs mt-1" style={{ color: '#f0c060' }}>{authError}</p>}
+                        <button className="w-full py-3 font-bold tracking-widest" style={{ background: 'linear-gradient(135deg, #d4a843, #a07820)', color: '#050d1a' }}>✦ MASUK ✦</button>
                     </form>
                 </div>
             </div>
@@ -580,11 +609,17 @@ const Streaming = () => {
 
     if (!userName) {
         return (
-            <div className="min-h-screen pt-20 flex items-center justify-center p-6" style={{ backgroundColor: '#fdf6ee' }}>
-                <div className="w-full max-w-md p-8 rounded-2xl text-center" style={{ backgroundColor: '#f0e6d3', border: '1px solid #c9956a30' }}>
-                    <Users className="mx-auto mb-6" size={48} style={{ color: '#c9956a' }} />
-                    <h2 className="text-2xl font-display mb-2" style={{ color: '#3b2a1a' }}>SIAPA NAMA ANDA?</h2>
-                    <p className="text-sm mb-8" style={{ color: '#7a5c3e' }}>Nama di live chat.</p>
+            <div className="min-h-screen pt-20 flex items-center justify-center p-6 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #020810 0%, #060f1c 100%)' }}>
+                <GoldenParticles count={100} />
+                <div className="relative z-10 w-full max-w-md p-8 text-center" style={{ background: 'rgba(10,22,40,0.8)', border: '1px solid rgba(212,168,67,0.3)', boxShadow: '0 0 40px rgba(212,168,67,0.08)', backdropFilter: 'blur(12px)' }}>
+                    {/* Gold corners */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: 20, height: 20, borderTop: '2px solid #d4a843', borderLeft: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: 20, height: 20, borderTop: '2px solid #d4a843', borderRight: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, width: 20, height: 20, borderBottom: '2px solid #d4a843', borderLeft: '2px solid #d4a843' }} />
+                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderBottom: '2px solid #d4a843', borderRight: '2px solid #d4a843' }} />
+                    <Users className="mx-auto mb-6" size={48} style={{ color: '#d4a843' }} />
+                    <h2 className="text-2xl font-display mb-2" style={{ color: '#f9e6a0' }}>SIAPA NAMA ANDA?</h2>
+                    <p className="text-sm mb-8 font-sans" style={{ color: '#d4c4a088' }}>Nama yang tampil di live chat.</p>
                     <form onSubmit={handleNameSubmit} className="space-y-4">
                         <input
                             type="text"
@@ -592,20 +627,20 @@ const Streaming = () => {
                             onChange={(e) => setTempName(e.target.value)}
                             placeholder="NAMA..."
                             maxLength={20}
-                            className="w-full rounded-xl py-3 px-4 outline-none text-center font-bold"
-                            style={{ backgroundColor: '#fdf6ee', border: '1px solid #c9956a50', color: '#3b2a1a' }}
+                            className="w-full py-3 px-4 outline-none text-center font-display font-bold tracking-widest"
+                            style={{ background: 'rgba(5,13,26,0.7)', border: '1px solid rgba(212,168,67,0.35)', color: '#f9e6a0' }}
                         />
-                        {authError && <p className="text-xs" style={{ color: '#c9956a' }}>{authError}</p>}
-                        <button className="w-full py-3 rounded-xl font-bold text-white" style={{ backgroundColor: '#c9956a' }}>START WATCHING</button>
+                        {authError && <p className="text-xs mt-1" style={{ color: '#f0c060' }}>{authError}</p>}
+                        <button className="w-full py-3 font-bold tracking-widest" style={{ background: 'linear-gradient(135deg, #d4a843, #a07820)', color: '#050d1a' }}>✦ START WATCHING ✦</button>
                     </form>
-                    <button onClick={() => { localStorage.removeItem('active_jkt_ticket'); window.location.reload(); }} className="text-[10px] mt-8 uppercase tracking-widest" style={{ color: '#a0785a' }}>GANTI TIKET</button>
+                    <button onClick={() => { localStorage.removeItem('active_jkt_ticket'); window.location.reload(); }} className="text-[10px] mt-8 uppercase tracking-widest font-sans" style={{ color: '#d4a84355' }}>GANTI TIKET</button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen pt-20 flex flex-col md:flex-row h-screen overflow-hidden select-none" style={{ backgroundColor: '#fdf6ee', color: '#3b2a1a' }}>
+        <div className="min-h-screen pt-20 flex flex-col md:flex-row h-screen overflow-hidden select-none" style={{ backgroundColor: '#020810', color: '#f5e6c8' }}>
             <div id="main-player-container" className="flex-grow bg-black flex flex-col relative group overflow-hidden">
                 <div className="flex-grow relative h-full w-full">
                     <div className="absolute inset-0 z-0 bg-black flex items-center justify-center">
@@ -647,24 +682,24 @@ const Streaming = () => {
                         >
                             {!isPlayerReady && (
                                 <div className="flex flex-col items-center gap-4">
-                                    <div className="w-10 h-10 border-4 rounded-full animate-spin" style={{ borderColor: '#c9956a20', borderTopColor: '#8b5e3c' }}></div>
-                                    <div className="font-mono text-[10px] animate-pulse uppercase tracking-[0.2em]" style={{ color: '#c9956a' }}>Resolving Signal...</div>
+                                    <div className="w-10 h-10 border-4 rounded-full animate-spin" style={{ borderColor: 'rgba(212,168,67,0.15)', borderTopColor: '#d4a843' }}></div>
+                                    <div className="font-mono text-[10px] animate-pulse uppercase tracking-[0.2em]" style={{ color: '#d4a843' }}>Resolving Signal...</div>
                                     <div className="text-[8px] uppercase tracking-widest mt-4" style={{ color: 'rgba(255,255,255,0.4)' }}>{isTouchDevice ? 'Tap screen to activate audio' : 'Click anywhere to activate audio'}</div>
                                 </div>
                             )}
                             {isPlayerReady && (
                                 isTouchDevice ? (
                                     // Mobile: original style
-                                    <div className="backdrop-blur-md px-6 py-3 rounded-full border animate-bounce" style={{ backgroundColor: 'rgba(139,94,60,0.2)', borderColor: 'rgba(139,94,60,0.4)' }}>
-                                        <div className="font-bold text-[10px] uppercase tracking-[0.2em]" style={{ color: '#c9956a' }}>TAP TO START WATCHING</div>
+                                    <div className="backdrop-blur-md px-6 py-3 rounded-full border animate-bounce" style={{ backgroundColor: 'rgba(212,168,67,0.15)', borderColor: 'rgba(212,168,67,0.4)' }}>
+                                        <div className="font-bold text-[10px] uppercase tracking-[0.2em]" style={{ color: '#d4a843' }}>TAP TO START WATCHING</div>
                                     </div>
                                 ) : (
                                     // Desktop: ping style
                                     <div className="flex flex-col items-center gap-6">
                                         <div className="relative">
-                                            <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: 'rgba(139,94,60,0.2)' }}></div>
-                                            <div className="relative backdrop-blur-md px-8 py-4 rounded-full border" style={{ backgroundColor: 'rgba(139,94,60,0.2)', borderColor: 'rgba(139,94,60,0.4)' }}>
-                                                <div className="font-bold text-[11px] uppercase tracking-[0.3em]" style={{ color: '#c9956a' }}>
+                                            <div className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: 'rgba(212,168,67,0.15)' }}></div>
+                                            <div className="relative backdrop-blur-md px-8 py-4 rounded-full border" style={{ backgroundColor: 'rgba(212,168,67,0.12)', borderColor: 'rgba(212,168,67,0.45)' }}>
+                                                <div className="font-bold text-[11px] uppercase tracking-[0.3em]" style={{ color: '#f0c060' }}>
                                                     ▶  CLICK TO START WATCHING
                                                 </div>
                                             </div>
@@ -678,7 +713,15 @@ const Streaming = () => {
 
                     <div
                         className={`absolute inset-0 z-30 transition-all duration-500 ${showControls ? 'opacity-100 bg-black/20' : 'opacity-0 md:group-hover:opacity-100'}`}
-                        onClick={() => setShowControls(!showControls)}
+                        onClick={(e) => {
+                            // On touch device: always SHOW (never toggle off via tap — auto-hides by timer)
+                            // On desktop: toggle
+                            if (isTouchDevice) {
+                                setShowControls(true);
+                            } else {
+                                setShowControls(prev => !prev);
+                            }
+                        }}
                     >
                         {/* Status Signal */}
                         <div className="absolute top-4 left-4">
@@ -688,22 +731,22 @@ const Streaming = () => {
                             </div>
                         </div>
 
-                        <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between items-end gap-4 translate-y-2 group-hover:translate-y-0 transition-transform">
+                        <div className="streaming-controls absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between items-end gap-4 translate-y-2 group-hover:translate-y-0 transition-transform">
                             <div className="flex flex-col gap-2">
-                                <div className="font-bold text-[9px] tracking-[0.4em] uppercase" style={{ color: '#c9956a' }}>{settings?.title || 'Nobar JKT48'}</div>
+                                <div className="font-bold text-[9px] tracking-[0.4em] uppercase" style={{ color: '#d4a843' }}>{settings?.title || 'Nobar JKT48'}</div>
                                 <button
                                     onClick={handleRefresh}
                                     className="flex items-center gap-2.5 px-4 py-2 rounded-full transition-all group"
-                                    style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#c9956a' }}
+                                    style={{ backgroundColor: 'rgba(212,168,67,0.08)', border: '1px solid rgba(212,168,67,0.25)', color: '#d4a843' }}
                                 >
                                     <RotateCcw size={16} className="group-hover:rotate-[-45deg] transition-transform" />
                                     <span className="text-[10px] font-bold tracking-[0.2em] pt-0.5">REFRESH LIVE</span>
                                 </button>
                             </div>
 
-                            <div className="flex items-center gap-3 sm:gap-6 backdrop-blur-md p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid rgba(201,149,106,0.2)' }}>
+                            <div className="flex items-center gap-3 sm:gap-6 backdrop-blur-md p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(0,0,0,0.5)', border: '1px solid rgba(212,168,67,0.2)' }}>
                                 <div className="relative">
-                                    <button onClick={(e) => { e.stopPropagation(); setShowQualityMenu(!showQualityMenu); }} className="flex flex-col items-center transition-colors" style={{ color: showQualityMenu ? '#8b5e3c' : autoQuality ? '#7a9e7e' : 'rgba(255,255,255,0.7)' }}>
+                                    <button onClick={(e) => { e.stopPropagation(); setShowQualityMenu(!showQualityMenu); }} className="flex flex-col items-center transition-colors" style={{ color: showQualityMenu ? '#f0c060' : autoQuality ? '#6dd4a8' : 'rgba(255,255,255,0.7)' }}>
                                         <Settings size={20} />
                                         <span className="text-[8px] mt-1 font-mono uppercase tracking-widest">
                                             {autoQuality ? 'AUTO' : quality === 'large' ? '480p' : quality === 'medium' ? '360p' : quality.replace('hd', '') + 'p'}
@@ -711,20 +754,20 @@ const Streaming = () => {
                                     </button>
 
                                     {showQualityMenu && (
-                                        <div className="absolute bottom-full mb-4 right-0 rounded-xl p-2 min-w-[160px] z-50 shadow-2xl backdrop-blur-xl" style={{ backgroundColor: '#f0e6d3', border: '1px solid #c9956a30' }}>
-                                            <div className="text-[8px] font-mono px-3 py-1 uppercase tracking-widest" style={{ color: '#a0785a' }}>Select Resolution</div>
+                                        <div className="absolute bottom-full mb-4 right-0 rounded-xl p-2 min-w-[160px] z-50 shadow-2xl backdrop-blur-xl" style={{ backgroundColor: 'rgba(5,13,26,0.97)', border: '1px solid rgba(212,168,67,0.25)' }}>
+                                            <div className="text-[8px] font-mono px-3 py-1 uppercase tracking-widest" style={{ color: '#d4a84388' }}>Select Resolution</div>
 
                                             {/* Auto Quality Toggle */}
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setAutoQuality(prev => !prev); }}
                                                 className={`w-full text-left px-4 py-2.5 rounded-lg text-[10px] font-bold transition-all flex items-center justify-between`}
-                                                style={autoQuality ? { backgroundColor: 'rgba(122,158,126,0.2)', color: '#7a9e7e', border: '1px solid rgba(122,158,126,0.3)' } : { color: '#7a5c3e' }}
+                                                style={autoQuality ? { backgroundColor: 'rgba(109,212,168,0.15)', color: '#6dd4a8', border: '1px solid rgba(109,212,168,0.3)' } : { color: '#d4c4a088' }}
                                             >
                                                 <span>Auto Quality</span>
-                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: autoQuality ? '#7a9e7e' : '#c9956a50' }}></span>
+                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: autoQuality ? '#6dd4a8' : 'rgba(212,168,67,0.3)' }}></span>
                                             </button>
 
-                                            <div className="border-t my-1" style={{ borderColor: '#c9956a20' }}></div>
+                                            <div className="border-t my-1" style={{ borderColor: 'rgba(212,168,67,0.12)' }}></div>
 
                                             {[
                                                 { label: '1440p QHD', value: 'hd1440' },
@@ -746,8 +789,8 @@ const Streaming = () => {
                                                     }}
                                                     className="w-full text-left px-4 py-2.5 rounded-lg text-[10px] font-bold transition-all"
                                                     style={!autoQuality && quality === q.value
-                                                        ? { backgroundColor: '#8b5e3c', color: 'white' }
-                                                        : { color: '#7a5c3e' }}
+                                                        ? { background: 'linear-gradient(135deg, #d4a843, #a07820)', color: '#050d1a' }
+                                                        : { color: '#d4c4a077' }}
                                                 >
                                                     {q.label}
                                                 </button>
@@ -756,34 +799,49 @@ const Streaming = () => {
                                     )}
                                 </div>
 
-                                <div className="hidden sm:flex items-center gap-3">
-                                    <Volume2 size={20} style={{ color: 'rgba(255,255,255,0.7)' }} />
+                                <div className="flex items-center gap-2">
+                                    <Volume2 size={18} style={{ color: 'rgba(255,255,255,0.7)' }} />
                                     <input
                                         type="range"
                                         min="0" max="1" step="0.1"
                                         value={volume}
                                         onChange={(e) => setVolume(parseFloat(e.target.value))}
                                         onMouseDown={(e) => e.stopPropagation()}
-                                        className="w-24 h-1 rounded-lg appearance-none cursor-pointer"
-                                        style={{ backgroundColor: 'rgba(255,255,255,0.1)', accentColor: '#8b5e3c' }}
+                                        onTouchStart={(e) => e.stopPropagation()}
+                                        className="w-16 sm:w-24 h-1 rounded-lg appearance-none cursor-pointer"
+                                        style={{ backgroundColor: 'rgba(255,255,255,0.1)', accentColor: '#d4a843' }}
                                     />
                                 </div>
 
                                 <button
                                     className="p-2 rounded-lg transition-colors"
-                                    style={{ border: '1px solid rgba(139,94,60,0.2)', color: '#c9956a' }}
+                                    style={{ border: '1px solid rgba(212,168,67,0.25)', color: '#d4a843' }}
                                     onClick={async (e) => {
                                         e.stopPropagation();
                                         const playerEl = document.getElementById('main-player-container');
-                                        if (document.fullscreenElement) {
-                                            document.exitFullscreen();
+                                        if (document.fullscreenElement || document.webkitFullscreenElement) {
+                                            if (document.exitFullscreen) document.exitFullscreen();
+                                            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
                                         } else if (playerEl) {
-                                            await playerEl.requestFullscreen();
+                                            if (playerEl.requestFullscreen) {
+                                                await playerEl.requestFullscreen();
+                                            } else if (playerEl.webkitRequestFullscreen) {
+                                                playerEl.webkitRequestFullscreen();
+                                            }
                                             if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape').catch(() => { });
                                         }
                                     }}
                                 >
-                                    <Maximize size={24} />
+                                    {isFullscreen ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+                                            <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+                                            <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+                                            <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+                                        </svg>
+                                    ) : (
+                                        <Maximize size={24} />
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -791,46 +849,46 @@ const Streaming = () => {
                 </div>
 
                 {/* Footer Info */}
-                <div className="border-t p-3 flex items-center justify-between z-40 px-6" style={{ backgroundColor: 'rgba(253,246,238,0.95)', borderColor: '#c9956a30' }}>
+                <div className="border-t p-3 flex items-center justify-between z-40 px-6" style={{ backgroundColor: 'rgba(5,13,26,0.97)', borderColor: 'rgba(212,168,67,0.15)' }}>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                            <span className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: '#a0785a' }}>Signal: Active</span>
+                            <span className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: '#d4a84388' }}>Signal: Active</span>
                         </div>
-                        <div className="h-3 w-px" style={{ backgroundColor: '#c9956a30' }} />
-                        <span className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: '#8b5e3c' }}>Live Channel</span>
+                        <div className="h-3 w-px" style={{ backgroundColor: 'rgba(212,168,67,0.15)' }} />
+                        <span className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: '#d4a843' }}>Live Channel</span>
                     </div>
-                    <div className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: '#a0785a' }}>Latency: Optimized</div>
+                    <div className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: '#d4a84355' }}>Latency: Optimized</div>
                 </div>
             </div>
 
             {/* Chat Section */}
-            <div className="w-full md:w-80 lg:w-96 flex flex-col h-[50vh] md:h-full" style={{ backgroundColor: '#f0e6d3', borderLeft: '1px solid #c9956a30' }}>
-                <div className="p-4 border-b flex justify-between items-center" style={{ borderColor: '#c9956a25' }}>
-                    <h3 className="font-bold tracking-widest text-xs uppercase" style={{ color: '#3b2a1a' }}>LIVE CHAT</h3>
-                    <div className="flex items-center text-xs font-bold gap-1 px-2 py-1 rounded" style={{ color: '#7a9e7e', backgroundColor: 'rgba(122,158,126,0.1)' }}>
+            <div className="w-full md:w-80 lg:w-96 flex flex-col h-[50vh] md:h-full" style={{ backgroundColor: '#080f1e', borderLeft: '1px solid rgba(212,168,67,0.15)' }}>
+                <div className="p-4 border-b flex justify-between items-center" style={{ borderColor: 'rgba(212,168,67,0.12)', background: 'rgba(5,13,26,0.8)' }}>
+                    <h3 className="font-display font-bold tracking-widest text-xs uppercase" style={{ color: '#f0c060' }}>LIVE CHAT</h3>
+                    <div className="flex items-center text-xs font-bold gap-1 px-2 py-1" style={{ color: '#6dd4a8', backgroundColor: 'rgba(109,212,168,0.08)', border: '1px solid rgba(109,212,168,0.2)' }}>
                         <Users size={12} /> {viewerCount.toLocaleString()}
                     </div>
                 </div>
-                <div id="chat-messages" className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar scroll-smooth" style={{ backgroundColor: '#fdf6ee' }}>
+                <div id="chat-messages" className="flex-grow overflow-y-auto p-4 space-y-3 custom-scrollbar scroll-smooth" style={{ backgroundColor: '#060d1b' }}>
                     {messages.map((msg, idx) => (
                         <div key={idx} className="text-sm">
-                            <span className="font-bold mr-2" style={{ color: msg.user === 'Admin' ? '#c9956a' : '#8b5e3c' }}>{msg.user}:</span>
-                            <span className="break-words font-medium" style={{ color: '#5a3e28' }}>{msg.text}</span>
+                            <span className="font-bold mr-2 font-display" style={{ color: msg.user === 'Admin' ? '#f0c060' : '#d4a843' }}>{msg.user}:</span>
+                            <span className="break-words font-sans" style={{ color: '#d4c4a0aa' }}>{msg.text}</span>
                         </div>
                     ))}
                 </div>
-                <form onSubmit={handleSend} className="p-4 border-t" style={{ borderColor: '#c9956a25', backgroundColor: '#f0e6d3' }}>
+                <form onSubmit={handleSend} className="p-4 border-t" style={{ borderColor: 'rgba(212,168,67,0.12)', backgroundColor: 'rgba(5,13,26,0.9)' }}>
                     <div className="relative">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            className="w-full rounded-full pl-4 pr-10 py-2.5 text-sm outline-none transition-all"
-                            style={{ backgroundColor: '#fdf6ee', border: '1px solid #c9956a40', color: '#3b2a1a' }}
+                            className="w-full pl-4 pr-10 py-2.5 text-sm outline-none transition-all font-sans"
+                            style={{ background: 'rgba(10,22,40,0.8)', border: '1px solid rgba(212,168,67,0.2)', color: '#f5e6c8' }}
                             placeholder="Type message..."
                         />
-                        <button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors" style={{ color: '#a0785a' }}>
+                        <button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2 transition-colors" style={{ color: '#d4a843' }}>
                             <Send size={18} />
                         </button>
                     </div>

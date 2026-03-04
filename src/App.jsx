@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAntiInspect } from './hooks/useAntiInspect';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Navbar from './components/Navbar';
@@ -12,13 +13,14 @@ import ScrollToTop from './components/ScrollToTop';
 import CursorAnimation from './components/CursorAnimation';
 
 function App() {
+  useAntiInspect();
   return (
     <Router>
       <ScrollToTop />
       <CursorAnimation />
-      <div className="min-h-screen font-sans flex flex-col" style={{ backgroundColor: '#fdf6ee', color: '#3b2a1a' }}>
+      <div className="min-h-screen font-sans flex flex-col" style={{ backgroundColor: '#020810', color: '#f5e6c8' }}>
         <Navbar />
-        <div className="flex-grow pt-20">
+        <div className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/details" element={<EventDetails />} />

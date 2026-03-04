@@ -6,6 +6,8 @@ import { members } from '../data/members';
 import MemberCard from '../components/MemberCard';
 import { db } from '../lib/firebase';
 import { ref, onValue } from 'firebase/database';
+import RamadanOrnaments, { ArabesqueDivider, IslamicStar } from '../components/RamadanOrnaments';
+import GoldenParticles from '../components/GoldenParticles';
 
 const Home = () => {
     const [settings, setSettings] = useState(() => {
@@ -57,99 +59,227 @@ const Home = () => {
     const featuredMembers = members.filter(m => selectedLineup.includes(m.id)).slice(0, 3);
     const targetDate = settings.date;
 
+    /* ── Stagger variants ─────────────────────────── */
+    const containerVariants = {
+        hidden: {},
+        visible: {
+            transition: {
+                staggerChildren: 0.15,
+                delayChildren: 0.1,
+            },
+        },
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 28 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+        },
+    };
+
     return (
-        <div className="relative flex flex-col items-center justify-center overflow-hidden min-h-screen" style={{ backgroundColor: '#fdf6ee' }}>
-            {/* Subtle Linen Pattern */}
+        <div
+            className="relative flex flex-col min-h-screen"
+            style={{
+                background: 'linear-gradient(180deg, #020810 0%, #060f1c 40%, #020810 100%)',
+            }}
+        >
+            {/* Ramadan Ornamental Background Layer */}
+            <RamadanOrnaments />
+
+            {/* Golden dust particles floating up */}
+            <GoldenParticles count={150} />
+
+            {/* Starfield dot pattern overlay */}
             <div
-                className="absolute inset-0 pointer-events-none"
+                className="absolute inset-0 pointer-events-none z-0"
                 style={{
-                    backgroundImage: 'radial-gradient(circle at 1px 1px, #c9956a18 1px, transparent 0)',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(ellipse 80% 60% at 50% 0%, #000 60%, transparent 100%)'
+                    backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(212,168,67,0.08) 1px, transparent 0)',
+                    backgroundSize: '50px 50px',
                 }}
             />
 
-            {/* Hero Section */}
-            <section className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 pt-10">
+            {/* Top golden arch glow */}
+            <div
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none z-0"
+                style={{
+                    background: 'radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.18) 0%, transparent 70%)',
+                }}
+            />
 
-                {/* Hero Content */}
+            {/* ═══ HERO SECTION ═══════════════════════════════════════ */}
+            <section className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 pt-16 z-10">
+
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                    className="text-center z-10 max-w-5xl relative"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="text-center z-10 max-w-5xl relative w-full"
                 >
-                    {/* Soft warm glow */}
-                    <div className="absolute -inset-10 rounded-full blur-[120px]" style={{ backgroundColor: '#c9956a1a' }} />
+                    {/* 1 — Special Show Badge */}
+                    <motion.div
+                        variants={itemVariants}
+                        className="flex items-center justify-center gap-3 mb-6"
+                    >
+                        <span style={{ color: '#d4a843', fontSize: 16 }}>✦</span>
+                        <span
+                            className="font-sans uppercase tracking-[0.35em] text-sm font-medium"
+                            style={{ color: '#d4a843' }}
+                        >
+                            Special Show
+                        </span>
+                        <span style={{ color: '#d4a843', fontSize: 16 }}>✦</span>
+                    </motion.div>
 
-                    {/* Title */}
-                    <h1
-                        className="font-display font-black mb-6 relative z-20 uppercase leading-tight"
+
+                    {/* 2 — Main Title */}
+                    <motion.h1
+                        variants={itemVariants}
+                        className="font-display font-black mb-6 relative z-20 uppercase leading-tight text-gold-shimmer"
                         style={{
-                            fontSize: `clamp(2.5rem, ${settings.title.length > 15 ? 12 : 18}vw, ${settings.title.length > 20 ? '5rem' : '8rem'})`,
+                            fontSize: `clamp(2.5rem, ${settings.title.length > 15 ? 11 : 16}vw, ${settings.title.length > 20 ? '4.5rem' : '7rem'})`,
                             wordBreak: 'break-word',
                             hyphens: 'auto',
-                            background: 'linear-gradient(to bottom, #3b2a1a, #8b5e3c)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
+                            letterSpacing: '0.04em',
+                            textShadow: '0 0 40px rgba(212,168,67,0.3)',
                         }}
                     >
                         {settings.title}
-                    </h1>
+                    </motion.h1>
 
-                    <div className="relative inline-block mb-10">
-                        <div className="absolute inset-0 blur-xl" style={{ backgroundColor: '#c9956a25' }} />
-                        <p className="relative z-10 text-xl md:text-3xl font-mono tracking-[0.2em] border-y py-4 px-10 backdrop-blur-sm uppercase" style={{ color: '#8b5e3c', borderColor: '#8b5e3c40' }}>
+                    {/* 3 — Arabesque divider */}
+                    <motion.div variants={itemVariants}>
+                        <ArabesqueDivider className="mb-8 opacity-70" />
+                    </motion.div>
+
+                    {/* 4 — Subtitle */}
+                    <motion.div variants={itemVariants} className="relative inline-block mb-8 w-full">
+                        <p
+                            className="relative z-10 text-lg md:text-2xl font-sans tracking-[0.25em] py-3 px-8 uppercase"
+                            style={{
+                                color: '#f5e6c8',
+                                letterSpacing: '0.25em',
+                                textShadow: '0 0 20px rgba(212,168,67,0.15)',
+                            }}
+                        >
                             {settings.subtitle}
                         </p>
-                    </div>
+                    </motion.div>
 
-                    {/* Price */}
+                    {/* 5 — Price */}
                     {settings.priceAmount && (
-                        <p className="font-mono tracking-[0.2em] mb-8 text-lg" style={{ color: '#8b5e3c' }}>
-                            PRICE : Rp {Number(settings.priceAmount).toLocaleString('id-ID')}
-                        </p>
+                        <motion.p
+                            variants={itemVariants}
+                            className="font-sans tracking-[0.2em] mb-8 text-lg"
+                            style={{ color: '#d4a843' }}
+                        >
+                            HARGA : Rp {Number(settings.priceAmount).toLocaleString('id-ID')}
+                        </motion.p>
                     )}
 
-                    <div className="mb-12 scale-110">
-                        <div className="font-mono text-sm mb-4 tracking-widest" style={{ color: '#a0785a' }}>EVENT STARTS IN</div>
+                    {/* 6 — Countdown */}
+                    <motion.div variants={itemVariants} className="mb-10">
+                        <div
+                            className="font-sans text-xs mb-4 tracking-[0.4em] uppercase"
+                            style={{ color: '#d4a84399' }}
+                        >
+                            ✦ EVENT DIMULAI DALAM ✦
+                        </div>
                         <CountdownTimer targetDate={targetDate} />
-                    </div>
+                    </motion.div>
 
-                    <div className="flex flex-col md:flex-row gap-8 justify-center items-center mt-8">
-                        <Link to="/details" className="group relative px-8 py-4 bg-transparent overflow-hidden rounded-none">
-                            <div className="absolute inset-0 w-full h-full border skew-x-12 transition-all duration-300" style={{ borderColor: '#c9956a60' }} />
-                            <span className="relative z-10 font-display font-bold text-xl tracking-widest transition-colors" style={{ color: '#8b5e3c' }}>
-                                DETAILS
+                    {/* 7 — CTA Button */}
+                    <motion.div variants={itemVariants} className="flex flex-col md:flex-row gap-6 justify-center items-center mt-4">
+                        <Link
+                            to="/details"
+                            className="group relative px-10 py-4 overflow-hidden"
+                            style={{
+                                background: 'linear-gradient(135deg, rgba(212,168,67,0.15), rgba(212,168,67,0.05))',
+                                border: '1px solid rgba(212,168,67,0.6)',
+                                boxShadow: '0 0 20px rgba(212,168,67,0.15)',
+                            }}
+                        >
+                            <div
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                                style={{ background: 'linear-gradient(135deg, rgba(212,168,67,0.25), rgba(240,192,96,0.1))' }}
+                            />
+                            <span
+                                className="relative z-10 font-display font-semibold text-base tracking-[0.3em]"
+                                style={{ color: '#f0c060' }}
+                            >
+                                ✦ LIHAT DETAIL
                             </span>
                         </Link>
-                    </div>
+                    </motion.div>
                 </motion.div>
             </section>
 
-            {/* Featured Members Section */}
-            <section className="w-full py-32 px-4 relative border-t" style={{ borderColor: '#c9956a20' }}>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-1" style={{ background: 'linear-gradient(to right, transparent, #c9956a, transparent)' }} />
+            {/* ═══ FEATURED MEMBERS SECTION ═══════════════════════════ */}
+            <section
+                className="w-full py-24 px-4 relative z-10"
+                style={{ borderTop: '1px solid rgba(212,168,67,0.15)' }}
+            >
+                {/* Top gold line accent */}
+                <div
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px"
+                    style={{ background: 'linear-gradient(to right, transparent, #d4a843, transparent)' }}
+                />
+
+                {/* Section bg glow */}
+                <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,168,67,0.04) 0%, transparent 70%)' }}
+                />
 
                 <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-20">
-                        <h2 className="text-5xl md:text-6xl font-display font-bold mb-6 uppercase">
-                            <span style={{ color: '#3b2a1a' }}>Featuring </span>
-                            <span style={{ color: '#c9956a' }}>Stars</span>
-                        </h2>
+                    {/* Section heading */}
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.7 }}
+                            viewport={{ once: true }}
+                        >
+                            <div className="flex justify-center mb-4">
+                                <IslamicStar size={20} opacity={0.6} />
+                            </div>
+                            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4 uppercase text-gold-shimmer">
+                                Featuring Stars
+                            </h2>
+                            <ArabesqueDivider className="max-w-md mx-auto mt-4 opacity-60" />
+                        </motion.div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                        {featuredMembers.map((member) => (
-                            <MemberCard key={member.id} member={member} />
+                    {/* Member cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                        {featuredMembers.map((member, idx) => (
+                            <motion.div
+                                key={member.id}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: idx * 0.15 }}
+                                viewport={{ once: true }}
+                            >
+                                <MemberCard member={member} />
+                            </motion.div>
                         ))}
                     </div>
 
-                    <div className="text-center mt-20">
+                    {/* View all link */}
+                    <div className="text-center mt-16">
                         <Link to="/members" className="inline-block relative group">
-                            <span className="text-xl font-mono tracking-widest transition-colors" style={{ color: '#a0785a' }}>VIEW ALL MEMBERS</span>
-                            <div className="absolute bottom-0 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-500" style={{ backgroundColor: '#8b5e3c' }} />
+                            <span
+                                className="text-lg font-sans tracking-[0.3em] uppercase transition-colors"
+                                style={{ color: '#d4a843' }}
+                            >
+                                ✦ LIHAT SEMUA MEMBER ✦
+                            </span>
+                            <div
+                                className="absolute bottom-0 left-0 w-0 h-px group-hover:w-full transition-all duration-500"
+                                style={{ backgroundColor: '#f0c060' }}
+                            />
                         </Link>
                     </div>
                 </div>
@@ -157,4 +287,5 @@ const Home = () => {
         </div>
     );
 };
+
 export default Home;

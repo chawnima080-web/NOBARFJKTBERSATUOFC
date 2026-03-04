@@ -1,40 +1,107 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Lato:wght@300;400;700&family=Amiri:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-    --font-sans: 'Inter', sans-serif;
-    --font-display: 'Playfair Display', serif;
+    --font-sans: 'Lato', sans-serif;
+    --font-display: 'Cinzel', serif;
+    --font-arabic: 'Amiri', serif;
 
-    /* Cream & Brown Palette */
-    --color-neon-blue: #8b5e3c;
-    --color-neon-purple: #a0785a;
-    --color-neon-pink: #c9956a;
-    --color-neon-green: #7a9e7e;
+    /* Ramadan Palette */
+    --color-ramadan-navy: #020810;
+    --color-ramadan-navy-mid: #0a1628;
+    --color-ramadan-navy-light: #112240;
+    --color-ramadan-gold: #d4a843;
+    --color-ramadan-gold-light: #f0c060;
+    --color-ramadan-gold-pale: #f9e6a0;
+    --color-ramadan-cream: #f5e6c8;
+    --color-ramadan-cream-dim: #d4c4a0;
+    --color-ramadan-purple: #1a0a35;
+    --color-ramadan-teal: #0d4f5e;
 
-    --color-dark-bg: #fdf6ee;
-    --color-dark-surface: #f0e6d3;
-    --color-dark-overlay: rgba(240, 230, 211, 0.9);
+    /* Semantic aliases */
+    --color-neon-blue: #d4a843;
+    --color-neon-purple: #f0c060;
+    --color-neon-pink: #f9e6a0;
+    --color-neon-green: #0d4f5e;
 
-    /* Extra warm tones */
-    --color-cream: #fdf6ee;
-    --color-cream-deep: #f0e6d3;
-    --color-brown: #8b5e3c;
-    --color-brown-light: #c9956a;
-    --color-brown-dark: #3b2a1a;
-    --color-brown-muted: #a0785a;
+    --color-dark-bg: #020810;
+    --color-dark-surface: #0a1628;
+    --color-dark-overlay: rgba(5, 13, 26, 0.92);
 
-    --animate-neon-pulse: neonPulse 2s infinite;
-    --animate-float: float 6s ease-in-out infinite;
+    --animate-neon-pulse: goldGlow 2.5s ease-in-out infinite;
+    --animate-float: crescentFloat 7s ease-in-out infinite;
+    --animate-star: starTwinkle 3s ease-in-out infinite;
+    --animate-lantern: lanternSway 4s ease-in-out infinite;
 
-    @keyframes neonPulse {
+    @keyframes goldGlow {
 
         0%,
         100% {
-            box-shadow: 0 0 10px #c9956a, 0 0 20px #c9956a;
+            box-shadow: 0 0 12px #d4a84355, 0 0 24px #d4a84322;
         }
 
         50% {
-            box-shadow: 0 0 20px #8b5e3c, 0 0 30px #8b5e3c;
+            box-shadow: 0 0 24px #f0c06088, 0 0 48px #d4a84344;
+        }
+    }
+
+    @keyframes crescentFloat {
+
+        0%,
+        100% {
+            transform: translateY(0px) rotate(-5deg);
+        }
+
+        50% {
+            transform: translateY(-18px) rotate(5deg);
+        }
+    }
+
+    @keyframes starTwinkle {
+
+        0%,
+        100% {
+            opacity: 0.2;
+            transform: scale(0.8);
+        }
+
+        50% {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+    }
+
+    @keyframes lanternSway {
+
+        0%,
+        100% {
+            transform: rotate(-6deg);
+        }
+
+        50% {
+            transform: rotate(6deg);
+        }
+    }
+
+    @keyframes moonGlow {
+
+        0%,
+        100% {
+            filter: drop-shadow(0 0 8px #d4a84388);
+        }
+
+        50% {
+            filter: drop-shadow(0 0 22px #f0c060bb);
+        }
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% center;
+        }
+
+        100% {
+            background-position: 200% center;
         }
     }
 
@@ -52,14 +119,56 @@
 }
 
 @layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
     body {
         @apply font-sans antialiased overflow-x-hidden m-0 p-0 min-h-screen cursor-none;
-        background-color: #fdf6ee;
-        color: #3b2a1a;
+        background-color: #020810;
+        color: #f5e6c8;
     }
 
     #root {
         @apply min-h-screen w-full;
+    }
+
+    /* ── Fullscreen fix (mobile + desktop) ─────────────────────────── */
+    /* Hide app chrome when any element goes into native fullscreen */
+    :fullscreen~* .navbar-fixed,
+    :-webkit-full-screen~* .navbar-fixed,
+    :-moz-full-screen~* .navbar-fixed {
+        display: none !important;
+    }
+
+    /* Video element fills screen completely in fullscreen */
+    video:fullscreen,
+    video:-webkit-full-screen,
+    video:-moz-full-screen {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        object-fit: contain !important;
+        background: #000 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 9999 !important;
+    }
+
+    /* iOS Safari: make container also fullscreen-aware */
+    #main-player-container:fullscreen,
+    #main-player-container:-webkit-full-screen {
+        width: 100vw !important;
+        height: 100vh !important;
+        background: #000 !important;
+    }
+
+    /* Hide bottom controls bar when in fullscreen on mobile */
+    :fullscreen .streaming-controls,
+    :-webkit-full-screen .streaming-controls {
+        display: none !important;
     }
 
     h1,
@@ -69,20 +178,81 @@
     h5,
     h6 {
         @apply font-display tracking-wide;
-        color: #3b2a1a;
+        color: #f9e6a0;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #0a1628;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #d4a843;
+        border-radius: 2px;
     }
 }
 
-/* Custom scrollbar for cream theme */
+/* ── Ramadan utility classes ─────────────────────────────────────── */
+
+/* Gold shimmer text */
+.text-gold-shimmer {
+    background: linear-gradient(90deg, #d4a843, #f0c060, #f9e6a0, #f0c060, #d4a843);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+}
+
+/* Ornamental gold border box */
+.ramadan-box {
+    background: rgba(10, 22, 40, 0.75);
+    border: 1px solid #d4a84355;
+    box-shadow: 0 0 30px #d4a84318, inset 0 0 20px #d4a84308;
+    backdrop-filter: blur(12px);
+}
+
+/* Star ornament */
+.star-ornament::before,
+.star-ornament::after {
+    content: '✦';
+    color: #d4a843;
+    opacity: 0.6;
+    margin: 0 0.5rem;
+}
+
+/* Moon glow animation */
+.moon-glow {
+    animation: moonGlow 3s ease-in-out infinite;
+}
+
+.lantern-sway {
+    animation: lanternSway 4s ease-in-out infinite;
+    transform-origin: top center;
+}
+
+.star-twinkle {
+    animation: starTwinkle 3s ease-in-out infinite;
+}
+
+.crescent-float {
+    animation: crescentFloat 7s ease-in-out infinite;
+}
+
+/* Custom scrollbar for compatibility */
 .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: #f0e6d3;
+    background: #0a1628;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #c9956a;
+    background: #d4a843;
     border-radius: 2px;
 }

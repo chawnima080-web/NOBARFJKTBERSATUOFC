@@ -1,71 +1,112 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef } from 'react';
+
+/**
+ * CursorAnimation — zero-React-rerender custom cursor.
+ *
+ * PERFORMANCE NOTES:
+ *  • Uses useRef + direct DOM style mutation instead of useState + motion.div
+ *  • mousemove only stores raw coords — no setState, no re-render
+ *  • requestAnimationFrame lerps the ring & glow for the spring feel
+ *  • Inner dot follows mouse directly with no delay (transforms via rAF)
+ *  • No Framer Motion dependency = no JS animation overhead on every move
+ */
+
+const lerp = (a, b, t) => a + (b - a) * t;
 
 const CursorAnimation = () => {
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const [isTouch, setIsTouch] = useState(false);
+    const ringRef = useRef(null);
+    const dotRef = useRef(null);
+    const glowRef = useRef(null);
 
     useEffect(() => {
-        setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (isTouch) return;
 
-        const updateMousePosition = (e) => {
-            setMousePosition({ x: e.clientX, y: e.clientY });
+        let mx = window.innerWidth / 2;
+        let my = window.innerHeight / 2;
+        // Lerp positions for ring and glow (spring-like)
+        let rx = mx, ry = my;   // ring
+        let gx = mx, gy = my;   // glow
+        let rafId;
+
+        const onMove = (e) => {
+            mx = e.clientX;
+            my = e.clientY;
         };
 
-        window.addEventListener('mousemove', updateMousePosition);
+        window.addEventListener('mousemove', onMove, { passive: true });
+
+        const tick = () => {
+            // Ring: medium lag
+            rx = lerp(rx, mx, 0.18);
+            ry = lerp(ry, my, 0.18);
+            // Glow: slow lag
+            gx = lerp(gx, mx, 0.07);
+            gy = lerp(gy, my, 0.07);
+
+            if (dotRef.current) {
+                dotRef.current.style.transform = `translate(${mx - 4}px, ${my - 4}px)`;
+            }
+            if (ringRef.current) {
+                ringRef.current.style.transform = `translate(${rx - 16}px, ${ry - 16}px)`;
+            }
+            if (glowRef.current) {
+                glowRef.current.style.transform = `translate(${gx - 64}px, ${gy - 64}px)`;
+            }
+
+            rafId = requestAnimationFrame(tick);
+        };
+
+        rafId = requestAnimationFrame(tick);
 
         return () => {
-            window.removeEventListener('mousemove', updateMousePosition);
+            window.removeEventListener('mousemove', onMove);
+            cancelAnimationFrame(rafId);
         };
     }, []);
 
-    if (isTouch) return null;
-
     return (
-        <div className="pointer-events-none fixed top-0 left-0 w-full h-full z-50 hidden md:block">
-            {/* Main cursor ring - brown */}
-            <motion.div
-                className="fixed top-0 left-0 w-8 h-8 rounded-full blur-sm"
-                style={{ border: '1px solid #8b5e3c', backgroundColor: 'rgba(139,94,60,0.15)' }}
-                animate={{
-                    x: mousePosition.x - 16,
-                    y: mousePosition.y - 16,
-                }}
-                transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 28,
-                    mass: 0.5
-                }}
-            />
-            {/* Dot - brown */}
-            <motion.div
-                className="fixed top-0 left-0 w-2 h-2 rounded-full"
-                style={{ backgroundColor: '#8b5e3c', boxShadow: '0 0 6px #c9956a' }}
-                animate={{
-                    x: mousePosition.x - 4,
-                    y: mousePosition.y - 4,
-                }}
-                transition={{
-                    type: "spring",
-                    stiffness: 1500,
-                    damping: 15,
-                    mass: 0.1
+        <div className="pointer-events-none fixed inset-0 z-[9999] hidden md:block" aria-hidden="true">
+            {/* Soft glow (slowest) */}
+            <div
+                ref={glowRef}
+                style={{
+                    position: 'fixed',
+                    top: 0, left: 0,
+                    width: 128, height: 128,
+                    borderRadius: '50%',
+                    background: 'rgba(212,168,67,0.06)',
+                    filter: 'blur(24px)',
+                    willChange: 'transform',
+                    pointerEvents: 'none',
                 }}
             />
-            {/* Soft warm glow */}
-            <motion.div
-                className="fixed top-0 left-0 w-32 h-32 rounded-full blur-xl"
-                style={{ backgroundColor: 'rgba(201,149,106,0.07)' }}
-                animate={{
-                    x: mousePosition.x - 64,
-                    y: mousePosition.y - 64,
+            {/* Ring (medium lag) */}
+            <div
+                ref={ringRef}
+                style={{
+                    position: 'fixed',
+                    top: 0, left: 0,
+                    width: 32, height: 32,
+                    borderRadius: '50%',
+                    border: '1px solid rgba(212,168,67,0.6)',
+                    background: 'rgba(212,168,67,0.06)',
+                    willChange: 'transform',
+                    pointerEvents: 'none',
                 }}
-                transition={{
-                    type: "spring",
-                    stiffness: 200,
-                    damping: 20,
-                    mass: 1
+            />
+            {/* Dot (instant, follows exactly) */}
+            <div
+                ref={dotRef}
+                style={{
+                    position: 'fixed',
+                    top: 0, left: 0,
+                    width: 8, height: 8,
+                    borderRadius: '50%',
+                    background: '#d4a843',
+                    boxShadow: '0 0 6px #f0c060',
+                    willChange: 'transform',
+                    pointerEvents: 'none',
                 }}
             />
         </div>

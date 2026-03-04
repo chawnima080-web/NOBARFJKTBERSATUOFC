@@ -4,44 +4,107 @@ import { motion } from 'framer-motion';
 const MemberCard = ({ member }) => {
     return (
         <motion.div
-            whileHover={{ y: -10 }}
-            className="relative group w-full max-w-sm mx-auto overflow-hidden rounded-xl"
-            style={{ backgroundColor: '#f0e6d3', border: '1px solid #c9956a40' }}
+            whileHover={{ y: -8, scale: 1.02 }}
+            transition={{ duration: 0.3 }}
+            className="relative group w-full max-w-sm mx-auto overflow-hidden"
+            style={{
+                background: 'rgba(10,22,40,0.7)',
+                border: '1px solid rgba(212,168,67,0.2)',
+                boxShadow: '0 4px 24px rgba(212,168,67,0.06)',
+            }}
         >
-            <div className="absolute inset-0 z-10" style={{ background: 'linear-gradient(to top, #3b2a1a, transparent)' }} />
+            {/* Bottom gradient overlay */}
+            <div
+                className="absolute inset-0 z-10"
+                style={{
+                    background: 'linear-gradient(to top, rgba(5,13,26,0.95) 0%, rgba(5,13,26,0.5) 45%, transparent 100%)',
+                }}
+            />
 
-            {/* Member Photo */}
-            <div className="h-96 relative w-full overflow-hidden" style={{ backgroundColor: '#e0d0b8' }}>
-                <div className="absolute inset-0 flex items-center justify-center font-display text-4xl opacity-10" style={{ color: '#8b5e3c' }}>
+            {/* Gold border on hover */}
+            <div
+                className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none"
+                style={{
+                    border: '1px solid rgba(212,168,67,0.55)',
+                    boxShadow: 'inset 0 0 30px rgba(212,168,67,0.07), 0 0 20px rgba(212,168,67,0.12)',
+                }}
+            />
+
+            {/* Gold corner accents (always visible) */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: 16, height: 16, borderTop: '2px solid rgba(212,168,67,0.6)', borderLeft: '2px solid rgba(212,168,67,0.6)', zIndex: 25 }} />
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 16, height: 16, borderTop: '2px solid rgba(212,168,67,0.6)', borderRight: '2px solid rgba(212,168,67,0.6)', zIndex: 25 }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, width: 16, height: 16, borderBottom: '2px solid rgba(212,168,67,0.6)', borderLeft: '2px solid rgba(212,168,67,0.6)', zIndex: 25 }} />
+            <div style={{ position: 'absolute', bottom: 0, right: 0, width: 16, height: 16, borderBottom: '2px solid rgba(212,168,67,0.6)', borderRight: '2px solid rgba(212,168,67,0.6)', zIndex: 25 }} />
+
+            {/* Photo */}
+            <div
+                className="h-96 relative w-full overflow-hidden"
+                style={{ backgroundColor: '#0a1628' }}
+            >
+                {/* Fallback initial */}
+                <div
+                    className="absolute inset-0 flex items-center justify-center font-display text-5xl select-none"
+                    style={{ color: 'rgba(212,168,67,0.08)' }}
+                >
                     {member.name.split(' ')[0]}
                 </div>
                 <img
                     src={member.image}
                     alt={member.name}
-                    className="w-full h-full object-cover md:grayscale group-hover:grayscale-0 transition-all duration-500 transform group-hover:scale-110"
+                    className="w-full h-full object-cover md:grayscale group-hover:grayscale-0 transition-all duration-500 transform group-hover:scale-108"
+                    style={{ '--tw-scale-x': 1.08, '--tw-scale-y': 1.08 }}
                     onError={(e) => {
                         e.target.style.display = 'none';
-                        e.target.parentElement.style.backgroundColor = '#d5c4aa';
+                        e.target.parentElement.style.backgroundColor = '#0a1628';
                     }}
                 />
             </div>
 
-            <div className="absolute bottom-0 left-0 w-full p-6 z-20">
-                <h3 className="text-2xl font-display font-bold text-white mb-1">{member.name}</h3>
-                <p className="font-mono text-sm mb-4" style={{ color: '#f0e6d3' }}>Gen {member.generation}</p>
+            {/* Name / Gen info */}
+            <div className="absolute bottom-0 left-0 w-full p-5 z-20">
+                <p
+                    className="font-sans text-xs tracking-[0.2em] uppercase mb-1.5"
+                    style={{ color: '#d4a84388' }}
+                >
+                    ✦ Gen {member.generation}
+                </p>
+                <h3
+                    className="text-xl font-display font-bold leading-tight"
+                    style={{ color: '#f9e6a0' }}
+                >
+                    {member.name}
+                </h3>
 
-                <div className="flex space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-4 group-hover:translate-y-0">
+                {/* Social links (on hover) */}
+                <div className="flex space-x-3 mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
                     {member.social && (
                         <>
-                            <a href={member.social.instagram} className="text-white/70 hover:text-white text-xs uppercase tracking-wider">Instagram</a>
-                            <a href={member.social.twitter} className="text-white/70 hover:text-white text-xs uppercase tracking-wider">Twitter</a>
+                            {member.social.instagram && (
+                                <a
+                                    href={member.social.instagram}
+                                    className="text-xs uppercase tracking-wider transition-colors font-sans"
+                                    style={{ color: '#d4a84399' }}
+                                    onMouseEnter={e => e.currentTarget.style.color = '#f0c060'}
+                                    onMouseLeave={e => e.currentTarget.style.color = '#d4a84399'}
+                                >
+                                    Instagram
+                                </a>
+                            )}
+                            {member.social.twitter && (
+                                <a
+                                    href={member.social.twitter}
+                                    className="text-xs uppercase tracking-wider transition-colors font-sans"
+                                    style={{ color: '#d4a84399' }}
+                                    onMouseEnter={e => e.currentTarget.style.color = '#f0c060'}
+                                    onMouseLeave={e => e.currentTarget.style.color = '#d4a84399'}
+                                >
+                                    Twitter
+                                </a>
+                            )}
                         </>
                     )}
                 </div>
             </div>
-
-            {/* Border Glow Effect */}
-            <div className="absolute inset-0 border-2 border-transparent group-hover:border-brown-light/50 rounded-xl transition-all duration-300 pointer-events-none" style={{ '--tw-border-opacity': 1 }} />
         </motion.div>
     );
 };
