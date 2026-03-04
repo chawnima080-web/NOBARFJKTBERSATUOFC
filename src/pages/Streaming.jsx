@@ -680,9 +680,12 @@ const Streaming = () => {
                         setShowControls(true);
                     }
                 }}
-                onTouchStart={() => {
-                    // Show controls on tap (mobile)
-                    setShowControls(true);
+                onClick={(e) => {
+                    // Unified handler: toggle on click/tap
+                    // For mobile, this is triggered after touch ends
+                    if (isActivated) {
+                        setShowControls(prev => !prev);
+                    }
                 }}
             >
                 <div className="flex-grow relative h-full w-full">
@@ -723,7 +726,7 @@ const Streaming = () => {
                     {/* INTERACTION OVERLAY (All Devices - Fixes Autoplay/Sound) */}
                     {!isActivated && (
                         <div
-                            className="absolute inset-0 z-[50] bg-black/80 flex flex-col items-center justify-center gap-4 cursor-pointer backdrop-blur-sm"
+                            className="absolute inset-0 z-[50] bg-black/40 flex flex-col items-center justify-center gap-4 cursor-pointer backdrop-blur-md"
                             onClick={activatePlayer}
                         >
                             {!isPlayerReady && (
@@ -765,9 +768,9 @@ const Streaming = () => {
                             pointerEvents: showControls && isActivated ? 'auto' : 'none'
                         }}
                         onClick={(e) => {
-                            // On mobile, tapping the overlay hides it (since touchstart already showed it)
-                            // On desktop, clicking the video toggles it
-                            if (isActivated && (e.target === e.currentTarget || e.target.classList.contains('streaming-click-layer'))) {
+                            // Stop propagation so the parent container doesn't toggle twice
+                            e.stopPropagation();
+                            if (isActivated) {
                                 setShowControls(prev => !prev);
                             }
                         }}

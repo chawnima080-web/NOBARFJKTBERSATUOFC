@@ -12,11 +12,16 @@ import ScrollToTop from './components/ScrollToTop';
 
 import CursorAnimation from './components/CursorAnimation';
 
-function App() {
+function AntiInspectWrapper() {
   useAntiInspect();
+  return null;
+}
+
+function App() {
   return (
     <Router>
       <ScrollToTop />
+      <AntiInspectWrapper />
       <CursorAnimation />
       <div className="min-h-screen font-sans flex flex-col" style={{ backgroundColor: '#020810', color: '#f5e6c8' }}>
         <Navbar />

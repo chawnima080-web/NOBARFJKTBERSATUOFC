@@ -1,10 +1,18 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const IS_DEV = import.meta.env.DEV;
 
 export function useAntiInspect() {
+    const location = useLocation();
+
     useEffect(() => {
         if (IS_DEV) return; // Nonaktif saat development
+
+        // Jangan aktifkan di halaman Admin Panel agar admin bisa copy key
+        if (location.pathname.startsWith('/managemen-web-nobar')) {
+            return;
+        }
 
         // ─── 1. Block klik kanan ─────────────────────────────────────────────
         const blockContext = (e) => {
@@ -99,5 +107,5 @@ export function useAntiInspect() {
             clearInterval(sizeInterval);
             clearInterval(consoleInterval);
         };
-    }, []);
+    }, [location.pathname]);
 }
