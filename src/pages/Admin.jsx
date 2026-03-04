@@ -197,11 +197,6 @@ const Admin = () => {
                 }}
             />
 
-            {/* Top glow */}
-            <div
-                className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[200px] pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.12) 0%, transparent 70%)', zIndex: 0 }}
-            />
 
             <div className="max-w-6xl mx-auto relative z-10">
 

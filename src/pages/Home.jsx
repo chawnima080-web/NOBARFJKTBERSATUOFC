@@ -101,13 +101,6 @@ const Home = () => {
                 }}
             />
 
-            {/* Top golden arch glow */}
-            <div
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[600px] h-[300px] pointer-events-none z-0"
-                style={{
-                    background: 'radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.18) 0%, transparent 70%)',
-                }}
-            />
 
             {/* ═══ HERO SECTION ═══════════════════════════════════════ */}
             <section className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 pt-28 pb-10 z-10">

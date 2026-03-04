@@ -59,11 +59,6 @@ const EventDetails = () => {
                 }}
             />
 
-            {/* Top glow */}
-            <div
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[250px] pointer-events-none z-0"
-                style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.14) 0%, transparent 70%)' }}
-            />
 
             <div className="max-w-4xl mx-auto relative z-10">
                 {/* Page heading */}
