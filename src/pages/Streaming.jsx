@@ -675,21 +675,20 @@ const Streaming = () => {
                             />
                         ) : videoId ? (
                             /* --- YouTube Player --- */
-                            <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
+                            <div className="absolute inset-0 z-10" style={{ pointerEvents: 'none' }}>
                                 <iframe
                                     id="yt-player-iframe"
                                     key={refreshKey}
                                     src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playlist=${videoId}&loop=1&rel=0&showinfo=0&controls=0&modestbranding=1&iv_load_policy=3&disablekb=1&enablejsapi=1&origin=${window.location.origin}&vq=${quality}&start=${activeTimeOffset}&playsinline=1`}
-                                    className="absolute inset-0 w-full h-full border-0"
-                                    style={{ pointerEvents: 'none' }}
+                                    className="absolute inset-0 w-full h-full border-0 pointer-events-none"
                                     allow="autoplay; encrypted-media; picture-in-picture"
                                     title="YouTube Stream"
                                     onLoad={() => {
                                         setIsPlayerReady(true);
                                     }}
                                 />
-                                {/* Hard block: prevents ANY touch from reaching the iframe (stops YouTube app redirect on mobile) */}
-                                <div className="absolute inset-0" style={{ pointerEvents: 'all', touchAction: 'none', background: 'transparent' }} />
+                                {/* Hard block: prevents ANY touch from reaching the iframe (stops YouTube app redirect on mobile) while letting parent handle clicks */}
+                                <div className="absolute inset-0 z-20 bg-transparent pointer-events-auto" style={{ touchAction: 'none' }} />
                             </div>
                         ) : (
                             <div className="text-white/20 font-mono text-[10px]">SIGNAL NOT DETECTED</div>
@@ -734,10 +733,10 @@ const Streaming = () => {
                     )}
 
                     <div
-                        className="absolute inset-0 z-30 transition-colors duration-500"
+                        className="absolute inset-0 z-30 transition-colors duration-500 pointer-events-auto"
                         style={{ backgroundColor: showControls ? 'rgba(0,0,0,0.2)' : 'transparent' }}
                         onClick={(e) => {
-                            // Jika klik tepat di area video transparan
+                            // Show/hide controls on tap anywhere in this area
                             if (e.target === e.currentTarget) {
                                 setShowControls(prev => !prev);
                             }
