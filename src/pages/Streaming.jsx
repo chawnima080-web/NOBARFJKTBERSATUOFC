@@ -300,18 +300,36 @@ const Streaming = () => {
         }
     }, [showControls]);
 
-    // Detect fullscreen changes (penting untuk mobile)
+    // Detect fullscreen changes & Back Button (penting untuk mobile)
     useEffect(() => {
         const handleFullscreenChange = () => {
-            setIsFullscreen(!!document.fullscreenElement);
+            const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            setIsFullscreen(isFs);
             // Tampilkan controls saat masuk/keluar fullscreen
             setShowControls(true);
+
+            // Bersihkan pseudo-hash saat native back/exit fullscreen UI
+            if (!isFs && window.location.hash.includes('#fullscreen')) {
+                window.history.back();
+            }
         };
+
+        const handlePopState = () => {
+            // Hardware back ditekan: jika sedang fullscreen, keluar
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            }
+        };
+
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        window.addEventListener('popstate', handlePopState);
+
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            window.removeEventListener('popstate', handlePopState);
         };
     }, []);
 
@@ -716,26 +734,24 @@ const Streaming = () => {
                     )}
 
                     <div
-                        className={`absolute inset-0 z-30 transition-all duration-500 ${showControls ? 'opacity-100 bg-black/20' : 'opacity-0 md:group-hover:opacity-100'}`}
+                        className="absolute inset-0 z-30 transition-colors duration-500"
+                        style={{ backgroundColor: showControls ? 'rgba(0,0,0,0.2)' : 'transparent' }}
                         onClick={(e) => {
-                            // On touch device: always SHOW (never toggle off via tap — auto-hides by timer)
-                            // On desktop: toggle
-                            if (isTouchDevice) {
-                                setShowControls(true);
-                            } else {
+                            // Jika klik tepat di area video transparan
+                            if (e.target === e.currentTarget) {
                                 setShowControls(prev => !prev);
                             }
                         }}
                     >
                         {/* Status Signal */}
-                        <div className="absolute top-4 left-4">
+                        <div className={`absolute top-4 left-4 transition-all duration-500 ${showControls ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`}>
                             <div className="text-white font-bold flex items-center gap-2 text-[9px] tracking-[0.4em] backdrop-blur-xl px-3 py-1.5 rounded-full border" style={{ backgroundColor: 'rgba(139,94,60,0.2)', borderColor: 'rgba(139,94,60,0.4)' }}>
                                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] ${videoId ? 'bg-red-500' : 'bg-gray-500'}`}></span>
                                 SIGNAL: {videoId ? 'LIVE' : 'OFFLINE'}
                             </div>
                         </div>
 
-                        <div className={`streaming-controls absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between items-end gap-4 transition-transform duration-300 ${showControls ? 'translate-y-0' : 'translate-y-2 md:group-hover:translate-y-0'}`}>
+                        <div className={`streaming-controls absolute bottom-0 left-0 w-full p-4 pb-6 sm:p-6 sm:pb-8 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between items-end gap-2 sm:gap-4 transition-all duration-500 ${showControls ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-4 opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:translate-y-0 md:group-hover:pointer-events-auto'}`}>
                             <div className="flex flex-col gap-2">
                                 <div className="font-bold text-[9px] tracking-[0.4em] uppercase" style={{ color: '#d4a843' }}>{settings?.title || 'Nobar JKT48'}</div>
                                 <button
@@ -833,6 +849,9 @@ const Streaming = () => {
                                                 playerEl.webkitRequestFullscreen();
                                             }
                                             if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape').catch(() => { });
+
+                                            // Intercept hardware back button on Android
+                                            window.history.pushState({ fullscreen: true }, '', window.location.pathname + window.location.search + '#fullscreen');
                                         }
                                     }}
                                 >
