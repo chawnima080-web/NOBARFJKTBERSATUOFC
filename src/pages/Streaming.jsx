@@ -680,13 +680,6 @@ const Streaming = () => {
                         setShowControls(true);
                     }
                 }}
-                onClick={(e) => {
-                    // Unified handler: toggle on click/tap
-                    // For mobile, this is triggered after touch ends
-                    if (isActivated) {
-                        setShowControls(prev => !prev);
-                    }
-                }}
             >
                 <div className="flex-grow relative h-full w-full">
                     <div className="absolute inset-0 z-0 bg-black flex items-center justify-center">
@@ -765,7 +758,7 @@ const Streaming = () => {
                         style={{
                             zIndex: 40,
                             backgroundColor: 'transparent',
-                            pointerEvents: showControls && isActivated ? 'auto' : 'none'
+                            pointerEvents: isActivated ? 'auto' : 'none'
                         }}
                         onClick={(e) => {
                             // Stop propagation so the parent container doesn't toggle twice
@@ -863,6 +856,7 @@ const Streaming = () => {
                                         onChange={(e) => setVolume(parseFloat(e.target.value))}
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onTouchStart={(e) => e.stopPropagation()}
+                                        onClick={(e) => e.stopPropagation()}
                                         className="w-16 sm:w-24 h-1 rounded-lg appearance-none cursor-pointer"
                                         style={{ backgroundColor: 'rgba(255,255,255,0.1)', accentColor: '#d4a843' }}
                                     />
