@@ -207,7 +207,7 @@ const RamadanOrnaments = () => (
 
         {/* Soft center glow — static */}
         <div
-            className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full"
+            className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[500px] h-[500px] rounded-full"
             style={{ background: 'radial-gradient(circle, rgba(212,168,67,0.04) 0%, transparent 70%)' }}
         />
     </div>

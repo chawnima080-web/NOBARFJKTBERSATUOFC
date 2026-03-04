@@ -103,7 +103,7 @@ const Home = () => {
 
             {/* Top golden arch glow */}
             <div
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none z-0"
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[600px] h-[300px] pointer-events-none z-0"
                 style={{
                     background: 'radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.18) 0%, transparent 70%)',
                 }}
@@ -139,10 +139,10 @@ const Home = () => {
                         variants={itemVariants}
                         className="font-display font-black mb-6 relative z-20 uppercase leading-tight text-gold-shimmer"
                         style={{
-                            fontSize: `clamp(2.5rem, ${settings.title.length > 15 ? 11 : 16}vw, ${settings.title.length > 20 ? '4.5rem' : '7rem'})`,
+                            fontSize: `clamp(2rem, ${settings.title.length > 15 ? 10 : 14}vw, ${settings.title.length > 20 ? '4rem' : '6.5rem'})`,
                             wordBreak: 'break-word',
                             hyphens: 'auto',
-                            letterSpacing: '0.04em',
+                            letterSpacing: '0.02em',
                             textShadow: '0 0 40px rgba(212,168,67,0.3)',
                         }}
                     >
@@ -157,10 +157,10 @@ const Home = () => {
                     {/* 4 — Subtitle */}
                     <motion.div variants={itemVariants} className="relative inline-block mb-8 w-full">
                         <p
-                            className="relative z-10 text-lg md:text-2xl font-sans tracking-[0.25em] py-3 px-8 uppercase"
+                            className="relative z-10 text-lg md:text-2xl font-sans py-3 px-4 md:px-8 uppercase"
                             style={{
                                 color: '#f5e6c8',
-                                letterSpacing: '0.25em',
+                                letterSpacing: '0.15em',
                                 textShadow: '0 0 20px rgba(212,168,67,0.15)',
                             }}
                         >

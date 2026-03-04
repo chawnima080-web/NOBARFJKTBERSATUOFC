@@ -309,30 +309,26 @@ const Streaming = () => {
             setShowControls(true);
 
             // Bersihkan pseudo-hash saat native back/exit fullscreen UI
-            if (!isFs && window.location.hash.includes('#fullscreen')) {
-                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                    // If exited native fullscreen, also clear our state
-                    setIsFullscreen(false);
-                } else {
-                    setIsFullscreen(true);
-                }
+            if (!isFs) {
+                setIsFullscreen(false);
             };
+        };
 
-            const handleKeyDown = (e) => {
-                if (e.key === 'Escape' && isFullscreen) {
-                    setIsFullscreen(false);
-                }
-            };
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && isFullscreen) {
+                setIsFullscreen(false);
+            }
+        };
 
-            document.addEventListener('fullscreenchange', handleFullscreenChange);
-            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-            document.addEventListener('keydown', handleKeyDown);
-            return () => {
-                document.removeEventListener('fullscreenchange', handleFullscreenChange);
-                document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-                document.removeEventListener('keydown', handleKeyDown);
-            };
-        }, [isFullscreen]);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isFullscreen]);
 
     // Cleanup object URL
     useEffect(() => {
@@ -765,7 +761,7 @@ const Streaming = () => {
                         className="absolute inset-0 transition-colors duration-500"
                         style={{
                             zIndex: 40,
-                            backgroundColor: showControls && isActivated ? 'rgba(0,0,0,0.5)' : 'transparent',
+                            backgroundColor: 'transparent',
                             pointerEvents: showControls && isActivated ? 'auto' : 'none'
                         }}
                         onClick={(e) => {
@@ -882,17 +878,18 @@ const Streaming = () => {
                                                 if (document.exitFullscreen) document.exitFullscreen();
                                                 else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
                                             }
+                                            setIsFullscreen(false);
                                         } else {
-                                            // Optional: try native fullscreen for Android landscape, but don't strictly require it
-                                            if (playerEl && isTouchDevice) {
+                                            if (playerEl) {
                                                 if (playerEl.requestFullscreen) {
                                                     playerEl.requestFullscreen().catch(() => { });
                                                 } else if (playerEl.webkitRequestFullscreen) {
                                                     playerEl.webkitRequestFullscreen();
                                                 }
-                                                if (screen.orientation && screen.orientation.lock) {
+                                                if (isTouchDevice && screen.orientation && screen.orientation.lock) {
                                                     screen.orientation.lock('landscape').catch(() => { });
                                                 }
+                                                setIsFullscreen(true);
                                             }
                                         }
                                     }}

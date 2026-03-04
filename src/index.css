@@ -121,6 +121,13 @@
 @layer base {
     html {
         scroll-behavior: smooth;
+        overflow-x: hidden;
+    }
+
+    *,
+    ::before,
+    ::after {
+        box-sizing: border-box;
     }
 
     body {
@@ -165,11 +172,6 @@
         background: #000 !important;
     }
 
-    /* Hide bottom controls bar when in fullscreen on mobile */
-    :fullscreen .streaming-controls,
-    :-webkit-full-screen .streaming-controls {
-        display: none !important;
-    }
 
     h1,
     h2,
