@@ -110,7 +110,7 @@ const Home = () => {
             />
 
             {/* ═══ HERO SECTION ═══════════════════════════════════════ */}
-            <section className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 pt-16 z-10">
+            <section className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 pt-28 pb-10 z-10">
 
                 <motion.div
                     variants={containerVariants}

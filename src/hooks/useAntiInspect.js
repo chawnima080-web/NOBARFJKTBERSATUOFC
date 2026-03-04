@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 
-const REDIRECT_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
 const IS_DEV = import.meta.env.DEV;
 
 export function useAntiInspect() {
@@ -53,19 +52,11 @@ export function useAntiInspect() {
         }, 50);
 
         // ─── 4. Window size detection (DevTools docked) ──────────────────────
-        let devDetected = false;
-        const redirectOnce = () => {
-            if (!devDetected) {
-                devDetected = true;
-                window.location.replace(REDIRECT_URL);
-            }
-        };
-
         const detectSize = () => {
             const widthDiff = window.outerWidth - window.innerWidth;
             const heightDiff = window.outerHeight - window.innerHeight;
             if (widthDiff > 160 || heightDiff > 160) {
-                redirectOnce();
+                // Not redirecting anymore
             }
         };
         const sizeInterval = setInterval(detectSize, 500);
@@ -78,7 +69,9 @@ export function useAntiInspect() {
             // eslint-disable-next-line no-console
             debugger; // eslint-disable-line no-debugger
             const t2 = performance.now();
-            if (t2 - t1 > 100) redirectOnce();
+            if (t2 - t1 > 100) {
+                // Not redirecting anymore
+            }
         };
         const consoleInterval = setInterval(detectConsole, 1000);
 
@@ -86,7 +79,7 @@ export function useAntiInspect() {
         const trap = new Image();
         Object.defineProperty(trap, 'id', {
             get() {
-                redirectOnce();
+                // Not redirecting anymore
                 return 'trap';
             },
         });

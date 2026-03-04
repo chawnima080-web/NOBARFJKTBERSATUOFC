@@ -688,7 +688,7 @@ const Streaming = () => {
                                     }}
                                 />
                                 {/* Hard block: prevents ANY touch from reaching the iframe (stops YouTube app redirect on mobile) while letting parent handle clicks */}
-                                <div className="absolute inset-0 z-20 bg-transparent pointer-events-auto" style={{ touchAction: 'none' }} />
+                                <div className="absolute inset-0 z-20 bg-transparent" style={{ touchAction: 'none' }} />
                             </div>
                         ) : (
                             <div className="text-white/20 font-mono text-[10px]">SIGNAL NOT DETECTED</div>
@@ -734,7 +734,7 @@ const Streaming = () => {
 
                     <div
                         className="absolute inset-0 z-30 transition-colors duration-500 pointer-events-auto"
-                        style={{ backgroundColor: showControls ? 'rgba(0,0,0,0.2)' : 'transparent' }}
+                        style={{ backgroundColor: showControls ? 'rgba(0,0,0,0.4)' : 'transparent' }}
                         onClick={(e) => {
                             // Show/hide controls on tap anywhere in this area
                             if (e.target === e.currentTarget) {
