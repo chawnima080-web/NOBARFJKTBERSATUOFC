@@ -81,7 +81,7 @@ const Home = () => {
 
     return (
         <div
-            className="relative flex flex-col min-h-screen"
+            className="relative flex flex-col min-h-screen overflow-x-hidden"
             style={{
                 background: 'linear-gradient(180deg, #020810 0%, #060f1c 40%, #020810 100%)',
             }}

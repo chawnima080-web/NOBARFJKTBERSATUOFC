@@ -310,10 +310,32 @@ const Streaming = () => {
 
             // Bersihkan pseudo-hash saat native back/exit fullscreen UI
             if (!isFs && window.location.hash.includes('#fullscreen')) {
-                window.history.back();
-            }
-        };
+                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                    // If exited native fullscreen, also clear our state
+                    setIsFullscreen(false);
+                } else {
+                    setIsFullscreen(true);
+                }
+            };
 
+            const handleKeyDown = (e) => {
+                if (e.key === 'Escape' && isFullscreen) {
+                    setIsFullscreen(false);
+                }
+            };
+
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('keydown', handleKeyDown);
+            return () => {
+                document.removeEventListener('fullscreenchange', handleFullscreenChange);
+                document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+                document.removeEventListener('keydown', handleKeyDown);
+            };
+        }, [isFullscreen]);
+
+    // Cleanup object URL
+    useEffect(() => {
         const handlePopState = () => {
             // Hardware back ditekan: jika sedang fullscreen, keluar
             if (document.fullscreenElement || document.webkitFullscreenElement) {
@@ -321,14 +343,8 @@ const Streaming = () => {
                 else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
             }
         };
-
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
         window.addEventListener('popstate', handlePopState);
-
         return () => {
-            document.removeEventListener('fullscreenchange', handleFullscreenChange);
-            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
             window.removeEventListener('popstate', handlePopState);
         };
     }, []);
@@ -659,7 +675,20 @@ const Streaming = () => {
 
     return (
         <div className="min-h-screen pt-20 flex flex-col md:flex-row h-screen overflow-hidden select-none" style={{ backgroundColor: '#020810', color: '#f5e6c8' }}>
-            <div id="main-player-container" className="flex-grow bg-black flex flex-col relative group overflow-hidden">
+            <div
+                id="main-player-container"
+                className={`flex-grow bg-black flex flex-col relative group overflow-hidden ${isFullscreen ? 'fixed inset-0 z-[99999]' : ''}`}
+                onMouseMove={() => {
+                    // Show controls on mouse move (desktop)
+                    if (!isTouchDevice) {
+                        setShowControls(true);
+                    }
+                }}
+                onTouchStart={() => {
+                    // Show controls on tap (mobile)
+                    setShowControls(true);
+                }}
+            >
                 <div className="flex-grow relative h-full w-full">
                     <div className="absolute inset-0 z-0 bg-black flex items-center justify-center">
                         {hlsMode ? (
@@ -698,7 +727,7 @@ const Streaming = () => {
                     {/* INTERACTION OVERLAY (All Devices - Fixes Autoplay/Sound) */}
                     {!isActivated && (
                         <div
-                            className="absolute inset-0 z-[40] bg-black flex flex-col items-center justify-center gap-4 cursor-pointer"
+                            className="absolute inset-0 z-[50] bg-black/80 flex flex-col items-center justify-center gap-4 cursor-pointer backdrop-blur-sm"
                             onClick={activatePlayer}
                         >
                             {!isPlayerReady && (
@@ -733,11 +762,16 @@ const Streaming = () => {
                     )}
 
                     <div
-                        className="absolute inset-0 z-30 transition-colors duration-500"
-                        style={{ backgroundColor: showControls ? 'rgba(0,0,0,0.5)' : 'transparent', pointerEvents: showControls ? 'auto' : 'none' }}
+                        className="absolute inset-0 transition-colors duration-500"
+                        style={{
+                            zIndex: 40,
+                            backgroundColor: showControls && isActivated ? 'rgba(0,0,0,0.5)' : 'transparent',
+                            pointerEvents: showControls && isActivated ? 'auto' : 'none'
+                        }}
                         onClick={(e) => {
-                            // Show/hide controls on tap anywhere in this area
-                            if (e.target === e.currentTarget || e.target.classList.contains('streaming-click-layer')) {
+                            // On mobile, tapping the overlay hides it (since touchstart already showed it)
+                            // On desktop, clicking the video toggles it
+                            if (isActivated && (e.target === e.currentTarget || e.target.classList.contains('streaming-click-layer'))) {
                                 setShowControls(prev => !prev);
                             }
                         }}
@@ -840,20 +874,26 @@ const Streaming = () => {
                                     style={{ border: '1px solid rgba(212,168,67,0.25)', color: '#d4a843' }}
                                     onClick={async (e) => {
                                         e.stopPropagation();
+                                        setIsFullscreen(!isFullscreen);
                                         const playerEl = document.getElementById('main-player-container');
-                                        if (document.fullscreenElement || document.webkitFullscreenElement) {
-                                            if (document.exitFullscreen) document.exitFullscreen();
-                                            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-                                        } else if (playerEl) {
-                                            if (playerEl.requestFullscreen) {
-                                                await playerEl.requestFullscreen();
-                                            } else if (playerEl.webkitRequestFullscreen) {
-                                                playerEl.webkitRequestFullscreen();
-                                            }
-                                            if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape').catch(() => { });
 
-                                            // Intercept hardware back button on Android
-                                            window.history.pushState({ fullscreen: true }, '', window.location.pathname + window.location.search + '#fullscreen');
+                                        if (isFullscreen) {
+                                            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                                                if (document.exitFullscreen) document.exitFullscreen();
+                                                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                                            }
+                                        } else {
+                                            // Optional: try native fullscreen for Android landscape, but don't strictly require it
+                                            if (playerEl && isTouchDevice) {
+                                                if (playerEl.requestFullscreen) {
+                                                    playerEl.requestFullscreen().catch(() => { });
+                                                } else if (playerEl.webkitRequestFullscreen) {
+                                                    playerEl.webkitRequestFullscreen();
+                                                }
+                                                if (screen.orientation && screen.orientation.lock) {
+                                                    screen.orientation.lock('landscape').catch(() => { });
+                                                }
+                                            }
                                         }
                                     }}
                                 >
