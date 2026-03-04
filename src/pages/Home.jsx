@@ -132,9 +132,9 @@ const Home = () => {
                         variants={itemVariants}
                         className="font-display font-black mb-6 relative z-20 uppercase leading-tight text-gold-shimmer"
                         style={{
-                            fontSize: `clamp(2rem, ${settings.title.length > 15 ? 10 : 14}vw, ${settings.title.length > 20 ? '4rem' : '6.5rem'})`,
-                            wordBreak: 'break-word',
-                            hyphens: 'auto',
+                            fontSize: `clamp(2rem, ${settings.title.length > 15 ? 8 : 11}vw, ${settings.title.length > 20 ? '3.5rem' : '6rem'})`,
+                            wordBreak: 'normal',
+                            hyphens: 'none',
                             letterSpacing: '0.02em',
                             textShadow: '0 0 40px rgba(212,168,67,0.3)',
                         }}
